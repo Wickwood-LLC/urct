@@ -38,11 +38,11 @@ class SettingsForm extends ConfigFormBase {
       'view' => $this->t('One user among result of a selected view'),
     ];
 
-    $form['fallback_user_selection'] = [
+    $form['fallback_type'] = [
       '#type' => 'radios',
       '#title' => $this->t('Fallback method'),
       '#options' => $fallback_type_options,
-      '#default_value' => $config->get('fallback_user_selection'),
+      '#default_value' => $config->get('fallback_type'),
       '#description' => $this->t('Select a fallback method you like to set the referrer when referral cookie does not exist, which happens when a user vists the site directly or through search engines.'),
     ];
 

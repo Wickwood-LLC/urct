@@ -4,6 +4,6 @@ urct.settings:
   type: config_object
   label: 'User Referral Settings'
   mapping:
-    fallback_user_selection:
+    fallback_type:
       type: string
       label: 'Fallback user selection'
