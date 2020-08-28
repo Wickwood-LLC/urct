@@ -44,6 +44,7 @@ class SettingsForm extends ConfigFormBase {
       '#options' => $fallback_type_options,
       '#default_value' => $config->get('fallback_type'),
       '#description' => $this->t('Select a fallback method you like to set the referrer when referral cookie does not exist, which happens when a user vists the site directly or through search engines.'),
+      '#required' => TRUE,
     ];
 
     $single_user_id = $config->get('single_user');
@@ -57,10 +58,10 @@ class SettingsForm extends ConfigFormBase {
       '#target_type' => 'user',
       '#title' => $this->t('User'),
       '#default_value' => $single_user,
-      '#description' => $this->t(''),
+      '#description' => $this->t('Type name to find required user and select.'),
       '#states' => [
         'visible' => [
-          ':input[name="fallback_user_selection"]' => ['value' => 'singel_user'],
+          ':input[name="fallback_type"]' => ['value' => 'singel_user'],
         ],
       ],
     ];
@@ -70,10 +71,10 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('Roles'),
       '#options' => user_role_names(TRUE),
       '#default_value' => $config->get('roles'),
-      '#description' => $this->t(''),
+      '#description' => $this->t('Select one or more roles.'),
       '#states' => [
         'visible' => [
-          ':input[name="fallback_user_selection"]' => ['value' => 'roles'],
+          ':input[name="fallback_type"]' => ['value' => 'roles'],
         ],
       ],
     ];
@@ -91,10 +92,10 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('View'),
       '#options' => $views_options,
       '#default_value' => $config->get('view'),
-      '#description' => $this->t(''),
+      '#description' => $this->t('If not done already, you can create a view to list out the users matching your citeria and select it here.'),
       '#states' => [
         'visible' => [
-          ':input[name="fallback_user_selection"]' => ['value' => 'view'],
+          ':input[name="fallback_type"]' => ['value' => 'view'],
         ],
       ],
     ];
@@ -114,7 +115,7 @@ class SettingsForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->config('urct.settings');
-    $config->set('fallback_user_selection', $form_state->getValue('fallback_user_selection'));
+    $config->set('fallback_type', $form_state->getValue('fallback_type'));
     $config->set('single_user', $form_state->getValue('single_user'));
     $config->set('roles', $form_state->getValue('roles'));
     $config->save();
