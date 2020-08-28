@@ -1,0 +1,6 @@
+
+urct.settings:
+  route_name: urct.settings
+  title: 'Token Settings'
+  weight: 5
+  base_route: user_referral.settings

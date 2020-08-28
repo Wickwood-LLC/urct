@@ -1,0 +1,5 @@
+urct.settings:
+  title: 'Token settings'
+  parent: user_referral.settings
+  description: 'Manage user referral cookie tokens settings'
+  route_name: urct.settings
