@@ -1,0 +1,7 @@
+name: User Referral Cookie Tokens
+type: module
+description: Provides tokens for the referral cookie.
+core_version_requirement: ^8.8 || ^9
+
+dependencies:
+  - user_referral:user_referral
