@@ -43,16 +43,28 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
 }
 
 function urct_cookie_referrer() {
-  if (!isset($_COOKIE[UserReferralType::COOKIE_NAME])) {
-    return;
+  $uid = NULL;
+  if (isset($_COOKIE[UserReferralType::COOKIE_NAME])) {
+    // Retrieve referral info from the cookie
+    $cookie = json_decode($_COOKIE[UserReferralType::COOKIE_NAME]);
+    if (!empty($cookie) && isset($cookie->uid)) {
+      $uid = $cookie->uid;
+    }
+  }
+  if (empty($uid)) {
+    // No referrer found from cookie. Fallback configured type.
+
+    $config = \Drupal::config('urct.settings');
+    $fallback_type = $config->get('fallback_type');
+    if (!empty($fallback_type)) {
+      if ($fallback_type == 'singel_user') {
+        $single_user_id = $config->get('single_user');
+        if (!empty($single_user_id)) {
+          $uid = $single_user_id;
+        }
+      }
+    }
   }
 
-  // Retrieve referral info from the cookie
-  $cookie = json_decode($_COOKIE[UserReferralType::COOKIE_NAME]);
-
-  if (empty($cookie)) {
-    // Nothing to do ...
-    return;
-  }
-  return User::load($cookie->uid);
+  return User::load($uid);
 }
