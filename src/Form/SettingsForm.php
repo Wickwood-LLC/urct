@@ -88,7 +88,7 @@ class SettingsForm extends ConfigFormBase {
     }
 
     $form['view'] = [
-      '#type' => 'checkboxes',
+      '#type' => 'radios',
       '#title' => $this->t('View'),
       '#options' => $views_options,
       '#default_value' => $config->get('view'),
