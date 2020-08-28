@@ -7,6 +7,7 @@
 
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\user_referral\Entity\UserReferralType;
+use Drupal\user\Entity\User;
 
 /**
  * Implements hook_token_info().
@@ -34,9 +35,24 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
   $replacements = [];
 
   if ($type == 'referrer_from_cookie') {
-    $account = UserReferralType::getReferrerFromCookie();
+    $account = urct_cookie_referrer();
     $bubbleable_metadata->addCacheContexts(['user']);
     $replacements += $token_service->generate('user', $tokens, ['user' => $account], $options, $bubbleable_metadata);
   }
   return $replacements;
+}
+
+function urct_cookie_referrer() {
+  if (!isset($_COOKIE[UserReferralType::COOKIE_NAME])) {
+    return;
+  }
+
+  // Retrieve referral info from the cookie
+  $cookie = json_decode($_COOKIE[UserReferralType::COOKIE_NAME]);
+
+  if (empty($cookie)) {
+    // Nothing to do ...
+    return;
+  }
+  return User::load($cookie->uid);
 }
