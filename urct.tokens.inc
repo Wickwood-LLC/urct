@@ -46,7 +46,6 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
 function urct_cookie_referrer() {
   $account = &drupal_static(__FUNCTION__);
   if (!isset($account)) {
-    \Drupal::service('page_cache_kill_switch')->trigger();
     $uid = NULL;
     if (isset($_COOKIE[UserReferralType::COOKIE_NAME])) {
       // Retrieve referral info from the cookie
