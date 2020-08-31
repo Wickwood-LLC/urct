@@ -43,7 +43,8 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('Fallback method'),
       '#options' => $fallback_type_options,
       '#default_value' => $config->get('fallback_type'),
-      '#description' => $this->t('Select a fallback method you like to set the referrer when referral cookie does not exist, which happens when a user vists the site directly or through search engines.'),
+      '#description' => $this->t('Select a fallback method you like to set the referrer when referral cookie does not exist, which happens when a user vists the site directly or through search engines. 
+      For roles and view options, it select a single user account each time, by rotating among the result by incrementing the user ID.'),
       '#required' => TRUE,
     ];
 
@@ -109,7 +110,7 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('View'),
       '#options' => $views_options,
       '#default_value' => $config->get('view'),
-      '#description' => $this->t('If not done already, you can create a view to list out the users matching your citeria and select it here.'),
+      '#description' => $this->t('If not done already, you can create a view to list out the users matching your citeria and select it here. Please make sure you create the view having just the master display, the master display will be used to get the result. Please note the pager settings will be discarded and it will select the user account rotated each time by incrementing user ID within the view result.'),
       '#states' => [
         'visible' => [
           ':input[name="fallback_type"]' => ['value' => 'view'],
