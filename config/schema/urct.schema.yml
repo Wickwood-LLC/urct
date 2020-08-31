@@ -7,3 +7,18 @@ urct.settings:
     fallback_type:
       type: string
       label: 'Fallback user selection'
+    single_user:
+      type: integer
+      label: User ID of the account to be used a fallback referrer.
+    roles:
+      type: sequence
+      label: Roles to which to be used to select the user for falling back.
+    roles_condition:
+      type: sequence
+      label: How to consider the roles for matching. Whether user has to have any or all of selected roles.
+    view:
+      type: string
+      label: Name of the view giving user Ids to select the fallback referrer user account.
+    last_selected_uid:
+      type: integer
+      label: User ID of the account selected as fallback referrer last time.

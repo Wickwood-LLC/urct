@@ -33,7 +33,7 @@ class SettingsForm extends ConfigFormBase {
     $config = $this->config('urct.settings');
 
     $fallback_type_options = [
-      'singel_user' => $this->t('Single user'),
+      'single_user' => $this->t('Single user'),
       'roles' => $this->t('One user among selected roles'),
       'view' => $this->t('One user among result of a selected view'),
     ];
@@ -61,7 +61,7 @@ class SettingsForm extends ConfigFormBase {
       '#description' => $this->t('Type name to find required user and select.'),
       '#states' => [
         'visible' => [
-          ':input[name="fallback_type"]' => ['value' => 'singel_user'],
+          ':input[name="fallback_type"]' => ['value' => 'single_user'],
         ],
       ],
     ];
@@ -71,6 +71,23 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('Roles'),
       '#options' => user_role_names(TRUE),
       '#default_value' => $config->get('roles'),
+      '#description' => $this->t('Select one or more roles.'),
+      '#states' => [
+        'visible' => [
+          ':input[name="fallback_type"]' => ['value' => 'roles'],
+        ],
+      ],
+    ];
+
+    $roles_condition_options = [
+      'or' => $this->t('User having any of selected roles.'),
+      'and' => $this->t('User having all of selected roles.'),
+    ];
+    $form['roles_condition'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Roles matching condition'),
+      '#options' => $roles_condition_options,
+      '#default_value' => $config->get('roles_condition') ?? 'or',
       '#description' => $this->t('Select one or more roles.'),
       '#states' => [
         'visible' => [
@@ -113,11 +130,26 @@ class SettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    $fallback_type = $form_state->getValue('fallback_type');
+    if ($fallback_type == 'single_user' && empty($form_state->getValue('single_user')) ) {
+      $form_state->setErrorByName('single_user', t('Select a user account.'));
+    }
+    else if ($fallback_type == 'roles' && empty(array_filter($form_state->getValue('roles'))) ) {
+      $form_state->setErrorByName('roles', t('Select at least one role.'));
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->config('urct.settings');
     $config->set('fallback_type', $form_state->getValue('fallback_type'));
     $config->set('single_user', $form_state->getValue('single_user'));
     $config->set('roles', $form_state->getValue('roles'));
+    $config->set('roles_condition', $form_state->getValue('roles_condition'));
+    $config->set('view', $form_state->getValue('view'));
     $config->save();
 
     parent::submitForm($form, $form_state);
