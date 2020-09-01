@@ -6,6 +6,7 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\user\Entity\User;
 use Drupal\views\Views;
+use Drupal\Core\Url;
 
 /**
  * Displays the captcha settings form.
@@ -35,7 +36,7 @@ class SettingsForm extends ConfigFormBase {
     $fallback_type_options = [
       'single_user' => $this->t('Single user'),
       'roles' => $this->t('One user among selected roles'),
-      'view' => $this->t('One user among result of a selected view'),
+      'view' => $this->t('One user among result of the <a href=":url">@name</a> view', [':url' => Url::fromRoute('entity.view.edit_display_form', ['view' => 'urct_referral_fallbacks', 'display_id' => 'default'])->toString(), '@name' => 'Referral Fallbacks']),
     ];
 
     $form['fallback_type'] = [
@@ -97,20 +98,9 @@ class SettingsForm extends ConfigFormBase {
       ],
     ];
 
-    $views = \Drupal::entityTypeManager()->getStorage('view')
-      ->loadByProperties(['base_table' => 'users_field_data']);
-
-    $views_options = [];
-    foreach ($views as $name => $view) {
-      $views_options[$name] = $view->label();
-    }
-
     $form['view'] = [
-      '#type' => 'radios',
-      '#title' => $this->t('View'),
-      '#options' => $views_options,
-      '#default_value' => $config->get('view'),
-      '#description' => $this->t('If not done already, you can create a view to list out the users matching your citeria and select it here. Please make sure you create the view having just the master display, the master display will be used to get the result. Please note the pager settings will be discarded and it will select the user account rotated each time by incrementing user ID within the view result.'),
+      '#type' => 'markup',
+      '#markup' => $this->t('Fallback referral account will be selected from the reult of view <a href=":url">@name</a>. You may edit the view to change its filter and sorting to set the conditions and sorting for the rotation.', [':url' => Url::fromRoute('entity.view.edit_display_form', ['view' => 'urct_referral_fallbacks', 'display_id' => 'default'])->toString(), '@name' => 'Referral Fallbacks']),
       '#states' => [
         'visible' => [
           ':input[name="fallback_type"]' => ['value' => 'view'],
@@ -150,7 +140,6 @@ class SettingsForm extends ConfigFormBase {
     $config->set('single_user', $form_state->getValue('single_user'));
     $config->set('roles', $form_state->getValue('roles'));
     $config->set('roles_condition', $form_state->getValue('roles_condition'));
-    $config->set('view', $form_state->getValue('view'));
     $config->save();
 
     parent::submitForm($form, $form_state);

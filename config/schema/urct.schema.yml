@@ -16,9 +16,6 @@ urct.settings:
     roles_condition:
       type: sequence
       label: How to consider the roles for matching. Whether user has to have any or all of selected roles.
-    view:
-      type: string
-      label: Name of the view giving user Ids to select the fallback referrer user account.
     last_selected_uid:
       type: integer
       label: User ID of the account selected as fallback referrer last time.

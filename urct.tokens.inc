@@ -145,7 +145,7 @@ function urct_get_user_from_view($last_selected_uid) {
   static $times = 0;
   $selected_uid = NULL;
   $config = \Drupal::service('config.factory')->getEditable('urct.settings');
-  $view_name = $config->get('view');
+  $view_name = 'urct_referral_fallbacks';
 
   $view = Views::getView($view_name);
 
