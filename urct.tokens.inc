@@ -78,9 +78,9 @@ function urct_cookie_referrer() {
         }
       }
       if (empty($uid)) {
-        $single_user_id = $config->get('single_user');
-        if (!empty($single_user_id)) {
-          $uid = $single_user_id;
+        $default_fallback_referrer_id = $config->get('default_fallback_referrer');
+        if (!empty($default_fallback_referrer_id)) {
+          $uid = $default_fallback_referrer_id;
         }
       }
     }

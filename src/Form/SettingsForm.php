@@ -33,23 +33,23 @@ class SettingsForm extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('urct.settings');
 
-    $single_user_id = $config->get('single_user');
+    $default_fallback_referrer_id = $config->get('default_fallback_referrer');
 
-    if (!empty($single_user_id)) {
-      $single_user = User::load($single_user_id);
+    if (!empty($default_fallback_referrer_id)) {
+      $default_fallback_referrer = User::load($default_fallback_referrer_id);
     }
 
-    $form['single_user'] = [
+    $form['default_fallback_referrer'] = [
       '#type' => 'entity_autocomplete',
       '#target_type' => 'user',
       '#title' => $this->t('Default referrer user'),
-      '#default_value' => $single_user,
+      '#default_value' => $default_fallback_referrer,
       '#description' => $this->t('Type a name to find required user and select. This user account will be used as referrer when system fails to get a referrer for a vistior through any of fallback methods configured below.'),
       '#required' => TRUE,
     ];
 
     $fallback_type_options = [
-      'single_user' => $this->t('Default referrer user configured above'),
+      'default_fallback_referrer' => $this->t('Default referrer user configured above'),
       'roles' => $this->t('One user among selected roles'),
       'view' => $this->t('One user among result of the <a href=":url">@name</a> view', [':url' => Url::fromRoute('entity.view.edit_display_form', ['view' => 'urct_referral_fallbacks', 'display_id' => 'default'])->toString(), '@name' => 'Referral Fallbacks']),
     ];
@@ -120,8 +120,8 @@ class SettingsForm extends ConfigFormBase {
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $fallback_type = $form_state->getValue('fallback_type');
 
-    if (!($fallback_referrer = User::load($form_state->getValue('single_user'))) || !$fallback_referrer->isActive() ) {
-      $form_state->setErrorByName('single_user', t('Please select an active user account.'));
+    if (!($fallback_referrer = User::load($form_state->getValue('default_fallback_referrer'))) || !$fallback_referrer->isActive() ) {
+      $form_state->setErrorByName('default_fallback_referrer', t('Please select an active user account.'));
     }
     if ($fallback_type == 'roles' && empty(array_filter($form_state->getValue('roles'))) ) {
       $form_state->setErrorByName('roles', t('Select at least one role.'));
@@ -134,7 +134,7 @@ class SettingsForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->config('urct.settings');
     $config->set('fallback_type', $form_state->getValue('fallback_type'));
-    $config->set('single_user', $form_state->getValue('single_user'));
+    $config->set('default_fallback_referrer', $form_state->getValue('default_fallback_referrer'));
     $config->set('roles', $form_state->getValue('roles'));
     $config->set('roles_condition', $form_state->getValue('roles_condition'));
     $config->save();

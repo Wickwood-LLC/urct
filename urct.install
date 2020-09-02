@@ -10,7 +10,7 @@ function urct_requirements($phase) {
   $requirements = [];
   if ($phase === 'runtime') {
     $config = \Drupal::config('urct.settings');
-    $fallback_user_id = $config->get('single_user');
+    $fallback_user_id = $config->get('default_fallback_referrer');
     $severity = REQUIREMENT_OK;
     if (empty($fallback_user_id)) {
       $value = t('A default fallback referrer is required');

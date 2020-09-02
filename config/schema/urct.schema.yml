@@ -7,7 +7,7 @@ urct.settings:
     fallback_type:
       type: string
       label: 'Fallback user selection'
-    single_user:
+    default_fallback_referrer:
       type: integer
       label: User ID of the account to be used a fallback referrer.
     roles:
