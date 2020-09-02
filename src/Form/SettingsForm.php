@@ -119,9 +119,10 @@ class SettingsForm extends ConfigFormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $fallback_type = $form_state->getValue('fallback_type');
-    // if ($fallback_type == 'single_user' && empty($form_state->getValue('single_user')) ) {
-    //   $form_state->setErrorByName('single_user', t('Select a user account.'));
-    // }
+
+    if (!($fallback_referrer = User::load($form_state->getValue('single_user'))) || !$fallback_referrer->isActive() ) {
+      $form_state->setErrorByName('single_user', t('Please select an active user account.'));
+    }
     if ($fallback_type == 'roles' && empty(array_filter($form_state->getValue('roles'))) ) {
       $form_state->setErrorByName('roles', t('Select at least one role.'));
     }
