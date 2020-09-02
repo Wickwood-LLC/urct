@@ -104,7 +104,18 @@ class SettingsForm extends ConfigFormBase {
       ],
     ];
 
-    // // Submit button.
+    $form['roll_up'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Roll-up method'),
+      '#options' => [
+        'enroller' => $this->t('Enroller (to use referrer of the referrer in case roriginal referrer is inactive)'),
+        'default_fallback_referrer' => $this->t('Default fallback referrer configured above'),
+      ],
+      '#default_value' => $config->get('roll_up') ?? 'enroller',
+      '#description' => $this->t('Select a method to perform when a referrer is inactive. If you choose enroller, then referrer of the referrer will be used. That will continue until an active referrer is found. If no active referrer could not be found at all then default fallback referrer will be used.'),
+    ];
+
+    // Submit button.
     $form['actions'] = ['#type' => 'actions'];
     $form['actions']['submit'] = [
       '#type' => 'submit',
@@ -137,6 +148,7 @@ class SettingsForm extends ConfigFormBase {
     $config->set('default_fallback_referrer', $form_state->getValue('default_fallback_referrer'));
     $config->set('roles', $form_state->getValue('roles'));
     $config->set('roles_condition', $form_state->getValue('roles_condition'));
+    $config->set('roll_up', $form_state->getValue('roll_up'));
     $config->save();
 
     parent::submitForm($form, $form_state);

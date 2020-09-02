@@ -19,3 +19,6 @@ urct.settings:
     last_selected_uid:
       type: integer
       label: User ID of the account selected as fallback referrer last time.
+    roll_up:
+      type: string
+      label: The roll-up method to follow in case referrer is not active.
