@@ -64,13 +64,7 @@ function urct_cookie_referrer() {
         $last_selected_uid = $config->get('last_selected_uid');
         $last_selected_uid = $last_selected_uid ?? 0;
 
-        if ($fallback_type == 'singel_user') {
-          $single_user_id = $config->get('single_user');
-          if (!empty($single_user_id)) {
-            $uid = $single_user_id;
-          }
-        }
-        else if ($fallback_type == 'roles') {
+        if ($fallback_type == 'roles') {
           $roles_condition = $config->get('roles_condition');
           if ($roles_condition == 'and') {
             $uid = urct_get_user_having_alls_roles($last_selected_uid);
@@ -81,6 +75,12 @@ function urct_cookie_referrer() {
         }
         else if ($fallback_type == 'view') {
           $uid = urct_get_user_from_view($last_selected_uid);
+        }
+      }
+      if (empty($uid)) {
+        $single_user_id = $config->get('single_user');
+        if (!empty($single_user_id)) {
+          $uid = $single_user_id;
         }
       }
     }
