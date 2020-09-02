@@ -9,6 +9,7 @@ use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\user_referral\Entity\UserReferralType;
 use Drupal\user\Entity\User;
 use Drupal\views\Views;
+use Drupal\user_referral\UserReferral;
 
 /**
  * Implements hook_token_info().
@@ -76,6 +77,23 @@ function urct_cookie_referrer() {
         else if ($fallback_type == 'view') {
           $uid = urct_get_user_from_view($last_selected_uid);
         }
+      }
+      if (!empty($uid) && $config->get('roll_up') == 'enroller') {
+        $referrer_account = User::load($uid);
+        do {
+          if ($referrer_account && $referrer_account->isActive()) {
+            $uid = $referrer_account->id();
+            break;
+          }
+          else if ($referrer_account) {
+            // Referrer account exists but not active.
+            // Then find enroller of this account.
+            $referrer_account = UserReferral::getReferrer($referrer_account);
+          }
+          else {
+            break;
+          }
+        } while($referrer_account);
       }
       if (empty($uid)) {
         $default_fallback_referrer_id = $config->get('default_fallback_referrer');
