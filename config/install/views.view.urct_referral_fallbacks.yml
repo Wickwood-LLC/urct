@@ -3,6 +3,9 @@ status: true
 dependencies:
   module:
     - user
+  enforced:
+    module:
+      - urct
 id: urct_referral_fallbacks
 label: 'URCT Referral Fallbacks'
 module: views
