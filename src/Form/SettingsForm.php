@@ -33,8 +33,23 @@ class SettingsForm extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('urct.settings');
 
+    $single_user_id = $config->get('single_user');
+
+    if (!empty($single_user_id)) {
+      $single_user = User::load($single_user_id);
+    }
+
+    $form['single_user'] = [
+      '#type' => 'entity_autocomplete',
+      '#target_type' => 'user',
+      '#title' => $this->t('Default referrer user'),
+      '#default_value' => $single_user,
+      '#description' => $this->t('Type a name to find required user and select. This user account will be used as referrer when system fails to get a referrer for a vistior through any of fallback methods configured below.'),
+      '#required' => TRUE,
+    ];
+
     $fallback_type_options = [
-      'single_user' => $this->t('Single user'),
+      'single_user' => $this->t('Default referrer user configured above'),
       'roles' => $this->t('One user among selected roles'),
       'view' => $this->t('One user among result of the <a href=":url">@name</a> view', [':url' => Url::fromRoute('entity.view.edit_display_form', ['view' => 'urct_referral_fallbacks', 'display_id' => 'default'])->toString(), '@name' => 'Referral Fallbacks']),
     ];
@@ -47,25 +62,6 @@ class SettingsForm extends ConfigFormBase {
       '#description' => $this->t('Select a fallback method you like to set the referrer when referral cookie does not exist, which happens when a user vists the site directly or through search engines. 
       For roles and view options, it select a single user account each time, by rotating among the result by incrementing the user ID.'),
       '#required' => TRUE,
-    ];
-
-    $single_user_id = $config->get('single_user');
-
-    if (!empty($single_user_id)) {
-      $single_user = User::load($single_user_id);
-    }
-
-    $form['single_user'] = [
-      '#type' => 'entity_autocomplete',
-      '#target_type' => 'user',
-      '#title' => $this->t('User'),
-      '#default_value' => $single_user,
-      '#description' => $this->t('Type name to find required user and select.'),
-      '#states' => [
-        'visible' => [
-          ':input[name="fallback_type"]' => ['value' => 'single_user'],
-        ],
-      ],
     ];
 
     $form['roles'] = [
@@ -123,10 +119,10 @@ class SettingsForm extends ConfigFormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $fallback_type = $form_state->getValue('fallback_type');
-    if ($fallback_type == 'single_user' && empty($form_state->getValue('single_user')) ) {
-      $form_state->setErrorByName('single_user', t('Select a user account.'));
-    }
-    else if ($fallback_type == 'roles' && empty(array_filter($form_state->getValue('roles'))) ) {
+    // if ($fallback_type == 'single_user' && empty($form_state->getValue('single_user')) ) {
+    //   $form_state->setErrorByName('single_user', t('Select a user account.'));
+    // }
+    if ($fallback_type == 'roles' && empty(array_filter($form_state->getValue('roles'))) ) {
       $form_state->setErrorByName('roles', t('Select at least one role.'));
     }
   }
