@@ -172,6 +172,8 @@ function urct_get_user_from_view($last_selected_uid) {
   // To initialize the query.
   $view->build();
   // Get underlaying SQL select query.
+  // We will execute the select query directly without executing the whole view.
+  // Executing the whole view will cause to load the user objects will increase the memory usage, which we want never to happen here.
   $query = $view->getQuery()->query();
   $fields = &$query->getFields();
   // Ensure uid is always as first column, so we can take it easily from the result.
@@ -185,14 +187,7 @@ function urct_get_user_from_view($last_selected_uid) {
   ] + $fields;
 
   $results = $query->execute()->fetchCol();
-  // Always select only one row and just after already selected user.
-  // $query->addWhere(0, 'uid', $last_selected_uid, '>');
-  // $query->setLimit(1);
-  // $query->setOffset(0);
 
-  // Execute the view.
-  // $view->execute();
-  // $view_result = $view->result;
   if (!empty($results)) {
     if (!empty($last_selected_uid)) {
       $index_of_last_selected_uid = array_search($last_selected_uid, $results);
@@ -215,17 +210,6 @@ function urct_get_user_from_view($last_selected_uid) {
     $selected_uid = NULL;
   }
 
-
-  // if (empty($view_result) && $times == 0) {
-  //   $times++;
-  //   $selected_uid = urct_get_user_from_view(0);
-  // }
-  // else {
-  //   $row = reset($view_result);
-  //   $selected_uid = $row->_entity->id();
-  //   $config->set('last_selected_uid', $selected_uid);
-  //   $config->save();
-  // }
   $config->set('last_selected_uid', $selected_uid);
   $config->save();
 
