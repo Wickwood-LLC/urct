@@ -22,6 +22,9 @@ urct.settings:
     roll_up:
       type: string
       label: The roll-up method to follow in case referrer is not active.
+    bot_agents:
+      type: string
+      label: Part of user agent strings to match as search engine crawler.
     debug:
       type: boolean
       label: Enable for debugging.

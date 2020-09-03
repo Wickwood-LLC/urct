@@ -115,6 +115,13 @@ class SettingsForm extends ConfigFormBase {
       '#description' => $this->t('Select a method to perform when a referrer is inactive. If you choose enroller, then referrer of the referrer will be used. That will continue until an active referrer is found. If no active referrer could not be found at all then default fallback referrer will be used.'),
     ];
 
+    $form['bot_agents'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Search engine bots'),
+      '#default_value' => $config->get('bot_agents') ?? '',
+      '#description' => $this->t('Ener part of string to match in User Agent name to determine as search engine crawlers. Enter one item per line. On detection, default referrer user will be used.'),
+    ];
+
     $form['debug_details'] = [
       '#type' => 'details',
       '#title' => $this->t('Debug'),
@@ -162,6 +169,7 @@ class SettingsForm extends ConfigFormBase {
     $config->set('roles', $form_state->getValue('roles'));
     $config->set('roles_condition', $form_state->getValue('roles_condition'));
     $config->set('roll_up', $form_state->getValue('roll_up'));
+    $config->set('bot_agents', $form_state->getValue('bot_agents'));
     $config->set('debug', $form_state->getValue('debug'));
     $config->save();
 

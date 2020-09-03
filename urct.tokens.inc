@@ -60,6 +60,31 @@ function urct_cookie_referrer() {
       }
     }
     if (empty($uid)) {
+      $bot_agents = $config->get('bot_agents');
+      $list = explode("\n", $bot_agents);
+      $list = array_map('trim', $list);
+      $list = array_map('strtolower', $list);
+      $list = array_filter($list, 'strlen');
+
+      $crawler = FALSE;
+      $request = \Drupal::request();
+      $userAgent = $request->headers->get('User-Agent');
+      foreach ($list as $position => $crawler_name_part) {
+        // Check for an explicit key.
+        $matches = [];
+        if (preg_match('/' . preg_quote($crawler_name_part, '/') . '/i', $userAgent, $matches)) {
+          $crawler = TRUE;
+          break;
+        }
+      }
+      if ($crawler) {
+        $default_fallback_referrer_id = $config->get('default_fallback_referrer');
+        if (!empty($default_fallback_referrer_id)) {
+          $uid = $default_fallback_referrer_id;
+        }
+      }
+    }
+    if (empty($uid)) {
       // No referrer found from cookie. Fallback configured type.
 
       $fallback_type = $config->get('fallback_type');
