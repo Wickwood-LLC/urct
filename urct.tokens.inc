@@ -47,6 +47,10 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
 function urct_cookie_referrer() {
   $account = &drupal_static(__FUNCTION__);
   if (!isset($account)) {
+    $config = \Drupal::service('config.factory')->getEditable('urct.settings');
+    if ($config->get('debug')) {
+      \Drupal::service('page_cache_kill_switch')->trigger();
+    }
     $uid = NULL;
     if (isset($_COOKIE[UserReferralType::COOKIE_NAME])) {
       // Retrieve referral info from the cookie
@@ -58,8 +62,6 @@ function urct_cookie_referrer() {
     if (empty($uid)) {
       // No referrer found from cookie. Fallback configured type.
 
-      // $config = \Drupal::config('urct.settings');
-      $config = \Drupal::service('config.factory')->getEditable('urct.settings');
       $fallback_type = $config->get('fallback_type');
       if (!empty($fallback_type)) {
         $last_selected_uid = $config->get('last_selected_uid');

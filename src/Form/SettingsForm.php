@@ -115,6 +115,19 @@ class SettingsForm extends ConfigFormBase {
       '#description' => $this->t('Select a method to perform when a referrer is inactive. If you choose enroller, then referrer of the referrer will be used. That will continue until an active referrer is found. If no active referrer could not be found at all then default fallback referrer will be used.'),
     ];
 
+    $form['debug_details'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Debug'),
+      '#open' => $config->get('debug') ?? FALSE,
+    ];
+
+    $form['debug_details']['debug'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Enable debugging'),
+      '#description' => $this->t('Enabling this checkbox will cause not cause any page that use referral cookie tokens anywhere in its content.'),
+      '#default_value' => $config->get('debug') ?? FALSE,
+    ];
+
     // Submit button.
     $form['actions'] = ['#type' => 'actions'];
     $form['actions']['submit'] = [
@@ -149,6 +162,7 @@ class SettingsForm extends ConfigFormBase {
     $config->set('roles', $form_state->getValue('roles'));
     $config->set('roles_condition', $form_state->getValue('roles_condition'));
     $config->set('roll_up', $form_state->getValue('roll_up'));
+    $config->set('debug', $form_state->getValue('debug'));
     $config->save();
 
     parent::submitForm($form, $form_state);
