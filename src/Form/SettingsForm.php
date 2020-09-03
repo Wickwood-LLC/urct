@@ -108,7 +108,7 @@ class SettingsForm extends ConfigFormBase {
       '#type' => 'radios',
       '#title' => $this->t('Roll-up method'),
       '#options' => [
-        'enroller' => $this->t('Enroller (to use referrer of the referrer in case roriginal referrer is inactive)'),
+        'enroller' => $this->t('Enroller (to use referrer of the referrer in case original referrer is inactive)'),
         'default_fallback_referrer' => $this->t('Default fallback referrer configured above'),
       ],
       '#default_value' => $config->get('roll_up') ?? 'enroller',
