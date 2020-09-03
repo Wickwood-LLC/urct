@@ -169,26 +169,65 @@ function urct_get_user_from_view($last_selected_uid) {
 
   // Set which view display we want.
   $view->setDisplay('default');
+  // To initialize the query.
+  $view->build();
+  // Get underlaying SQL select query.
+  $query = $view->getQuery()->query();
+  $fields = &$query->getFields();
+  // Ensure uid is always as first column, so we can take it easily from the result.
+  unset($fields['uid']);
+  $fields = [
+    'uid' => [
+      'field' => 'uid',
+      'table' => 'users_field_data',
+      'alias' => 'uid',
+    ],
+  ] + $fields;
 
-  $query = $view->getQuery();
+  $results = $query->execute()->fetchCol();
   // Always select only one row and just after already selected user.
-  $query->addWhere(0, 'uid', $last_selected_uid, '>');
-  $query->setLimit(1);
-  $query->setOffset(0);
+  // $query->addWhere(0, 'uid', $last_selected_uid, '>');
+  // $query->setLimit(1);
+  // $query->setOffset(0);
 
   // Execute the view.
-  $view->execute();
-  $view_result = $view->result;
-
-  if (empty($view_result) && $times == 0) {
-    $times++;
-    $selected_uid = urct_get_user_from_view(0);
+  // $view->execute();
+  // $view_result = $view->result;
+  if (!empty($results)) {
+    if (!empty($last_selected_uid)) {
+      $index_of_last_selected_uid = array_search($last_selected_uid, $results);
+      if ($index_of_last_selected_uid === FALSE || $index_of_last_selected_uid == (count($results) - 1)) {
+        // Could not find or last selected item is las position in result.
+        // Select the first item from the result.
+        $selected_uid = reset($results);
+      }
+      else {
+        $selected_uid = $results[$index_of_last_selected_uid + 1];
+      }
+    }
+    else {
+      // No information about last selected uid.
+      // Start with first item in the result.
+      $selected_uid = reset($results);
+    }
   }
   else {
-    $row = reset($view_result);
-    $selected_uid = $row->_entity->id();
-    $config->set('last_selected_uid', $selected_uid);
-    $config->save();
+    $selected_uid = NULL;
   }
+
+
+  // if (empty($view_result) && $times == 0) {
+  //   $times++;
+  //   $selected_uid = urct_get_user_from_view(0);
+  // }
+  // else {
+  //   $row = reset($view_result);
+  //   $selected_uid = $row->_entity->id();
+  //   $config->set('last_selected_uid', $selected_uid);
+  //   $config->save();
+  // }
+  $config->set('last_selected_uid', $selected_uid);
+  $config->save();
+
   return $selected_uid;
 }
