@@ -1,15 +1,15 @@
 langcode: en
 status: true
 dependencies:
-  module:
-    - user
   enforced:
     module:
       - urct
+  module:
+    - user
 id: urct_referral_fallbacks
 label: 'URCT Referral Fallbacks'
 module: views
-description: ''
+description: 'Please adjust filtering and sorting on this view as you need the referrals to be considered for falling back.'
 tag: ''
 base_table: users_field_data
 base_field: uid
@@ -46,9 +46,26 @@ display:
           sort_asc_label: Asc
           sort_desc_label: Desc
       pager:
-        type: none
+        type: full
         options:
+          items_per_page: 25
           offset: 0
+          id: 0
+          total_pages: null
+          tags:
+            previous: '‹ Previous'
+            next: 'Next ›'
+            first: '« First'
+            last: 'Last »'
+          expose:
+            items_per_page: false
+            items_per_page_label: 'Items per page'
+            items_per_page_options: '5, 10, 25, 50'
+            items_per_page_options_all: false
+            items_per_page_options_all_label: '- All -'
+            offset: false
+            offset_label: Offset
+          quantity: 9
       style:
         type: default
         options:
@@ -132,10 +149,12 @@ display:
       arguments: {  }
       display_extenders:
         metatag_display_extender: {  }
+      title: 'This view is used by the User Referral Cookie Tokens module internally'
     cache_metadata:
       max-age: -1
       contexts:
         - 'languages:language_content'
         - 'languages:language_interface'
+        - url.query_args
         - user.permissions
       tags: {  }
