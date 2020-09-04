@@ -60,7 +60,7 @@ class SettingsForm extends ConfigFormBase {
       '#options' => $fallback_type_options,
       '#default_value' => $config->get('fallback_type'),
       '#description' => $this->t('Select a fallback method you like to set the referrer when referral cookie does not exist, which happens when a user vists the site directly or through search engines. 
-      For roles and view options, it select a single user account each time, by rotating among the result by incrementing the user ID.'),
+      For Roles and View fallback options, a different user account is displayed each time the site is visited directly, rotating selected users by incrementing the user ID or as filtered and sorted with the <a href=":url">@name</a> View.', [':url' => Url::fromRoute('entity.view.edit_display_form', ['view' => 'urct_referral_fallbacks', 'display_id' => 'default'])->toString(), '@name' => 'Referral Fallbacks']),
       '#required' => TRUE,
     ];
 
@@ -112,14 +112,14 @@ class SettingsForm extends ConfigFormBase {
         'default_fallback_referrer' => $this->t('Default fallback referrer configured above'),
       ],
       '#default_value' => $config->get('roll_up') ?? 'enroller',
-      '#description' => $this->t('Select a method to perform when a referrer is inactive. If you choose enroller, then referrer of the referrer will be used. That will continue until an active referrer is found. If no active referrer could not be found at all then default fallback referrer will be used.'),
+      '#description' => $this->t('Select a method to perform when a referrer is inactive. If you choose enroller, then referrer of the referrer will be used. Roll-Up will continue until an active referrer is found. If there is no active referrer available, then the default fallback referrer will be used.'),
     ];
 
     $form['bot_agents'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Search engine bots'),
       '#default_value' => $config->get('bot_agents') ?? '',
-      '#description' => $this->t('Ener part of string to match in User Agent name to determine as search engine crawlers. Enter one item per line. On detection, default referrer user will be used.'),
+      '#description' => $this->t('Enter part of string to match in User Agent name to detect search engine crawlers. Enter one item per line. On detection, Default Referrer User will be used.'),
     ];
 
     $form['debug_details'] = [
@@ -131,7 +131,7 @@ class SettingsForm extends ConfigFormBase {
     $form['debug_details']['debug'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Enable debugging'),
-      '#description' => $this->t('Enabling this checkbox will cause not cause any page that use referral cookie tokens anywhere in its content.'),
+      '#description' => $this->t('Enabling this checkbox will disable cache on any page that use referral cookie tokens anywhere in its content.'),
       '#default_value' => $config->get('debug') ?? FALSE,
     ];
 
