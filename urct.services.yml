@@ -1,0 +1,4 @@
+services:
+  urct.referral_manager:
+    class: Drupal\urct\ReferralManager
+    arguments: ['@config.factory', '@page_cache_kill_switch']
