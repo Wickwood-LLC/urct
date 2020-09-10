@@ -4,7 +4,7 @@ services:
     arguments: ['@config.factory', '@page_cache_kill_switch']
     tags:
       - { name: path_processor_inbound, priority: 200 }
-      - { name: path_processor_outbound, priority: 400 }
+      - { name: path_processor_outbound, priority: 200 }
       - { name: event_subscriber }
   cache_context.user_referral:
     class: Drupal\urct\Cache\Context\ReferralPathCacheContext
