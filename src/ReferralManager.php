@@ -8,8 +8,17 @@ use Drupal\user\Entity\User;
 use Drupal\user_referral\Entity\UserReferralType;
 use Drupal\views\Views;
 use Drupal\user_referral\UserReferral;
+use Drupal\Core\PathProcessor\InboundPathProcessorInterface;
+use Drupal\Core\PathProcessor\OutboundPathProcessorInterface;
+use Drupal\Core\Render\BubbleableMetadata;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Drupal\user_referral\Event\UserReferralCookieEvent;
 
-class ReferralManager {
+class ReferralManager implements InboundPathProcessorInterface, OutboundPathProcessorInterface, EventSubscriberInterface {
 
   /**
    * Referrer user object.
@@ -244,4 +253,62 @@ class ReferralManager {
 
     return $selected_uid;
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function processInbound($path, Request $request) {
+    if (preg_match('~refid(\d+)$~', $path, $matches)) {
+      $parts = array_filter(explode('/', $path));
+      array_pop($parts);
+      $path = '/' . implode('/', $parts);
+      $request->attributes->add(['_disable_route_normalizer' => TRUE]);
+      if (!$this->referrer) {
+        $this->referrer = User::load($matches[1]);
+      }
+    }
+    // if (!$this->referrer && $request->query->has('refid')) {
+    //   $this->referrer = User::load($request->query->get('refid'));
+    // }
+    return $path;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function processOutbound($path, &$options = [], Request $request = NULL, BubbleableMetadata $bubbleable_metadata = NULL) {
+    if ($this->referrer && ( empty($options['route']) || !\Drupal::service('router.admin_context')->isAdminRoute($options['route']) ) ) {
+      // $options['query']['refid'] = $this->referrer->id();
+      $path .= '/refid' . $this->referrer->id();
+      if ($bubbleable_metadata) {
+        $bubbleable_metadata->addCacheContexts(['user']);
+        $bubbleable_metadata->addCacheableDependency($this->referrer);
+      }
+    }
+    return $path;
+  }
+
+  public function onKernelResponse(FilterResponseEvent $event) {
+    $response = $event->getResponse();
+    if ($this->referrer && $response instanceof RedirectResponse) {
+      $target_url = $response->getTargetUrl();
+      $response->setTargetUrl($target_url . '/refid' . $this->referrer->id());
+    }
+  }
+
+  public function onReferralCookieBeingSet(UserReferralCookieEvent $event) {
+    // Get referrer from cookie being set.
+    $cookie = $event->getCookie();
+    $this->referrer = User::load($cookie->uid);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  static function getSubscribedEvents() {
+    $events[KernelEvents::RESPONSE][] = ['onKernelResponse'];
+    $events[UserReferralCookieEvent::COOKIE_SET][] = ['onReferralCookieBeingSet'];
+    return $events;
+  }
+
 }
