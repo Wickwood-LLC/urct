@@ -27,6 +27,8 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
    */
   protected $referrer;
 
+  protected $referrerInPath;
+
   /**
    * Config Factory Service Object.
    *
@@ -57,9 +59,9 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
 
   public function getCurrentReferrer() {
     if (!isset($this->referrer)) {
-      $config = \Drupal::service('config.factory')->getEditable('urct.settings');
+      $config = $this->configFactory->getEditable('urct.settings');
       if ($config->get('debug')) {
-        \Drupal::service('page_cache_kill_switch')->trigger();
+        $this->killSwitch->trigger();
       }
       $uid = NULL;
       if (isset($_COOKIE[UserReferralType::COOKIE_NAME])) {
@@ -148,7 +150,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   protected function getUserHavingAnyRoles($last_selected_uid) {
     static $times = 0;
     $selected_uid = NULL;
-    $config = \Drupal::service('config.factory')->getEditable('urct.settings');
+    $config = $this->configFactory->getEditable('urct.settings');
     $roles = array_values(array_filter($config->get('roles')));
 
     $query = \Drupal::entityQuery('user')
@@ -171,7 +173,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   protected function getUserHavingAllRoles($last_selected_uid) {
     static $times = 0;
     $selected_uid = NULL;
-    $config = \Drupal::service('config.factory')->getEditable('urct.settings');
+    $config = $this->configFactory->getEditable('urct.settings');
     $roles = array_values(array_filter($config->get('roles')));
 
     $database = \Drupal::database();
@@ -200,7 +202,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   protected function getUserFromView($last_selected_uid) {
     static $times = 0;
     $selected_uid = NULL;
-    $config = \Drupal::service('config.factory')->getEditable('urct.settings');
+    $config = $this->configFactory->getEditable('urct.settings');
     $view_name = 'urct_referral_fallbacks';
 
     $view = Views::getView($view_name);
@@ -263,8 +265,9 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
       array_pop($parts);
       $path = '/' . implode('/', $parts);
       $request->attributes->add(['_disable_route_normalizer' => TRUE]);
+      $this->referrerInPath = User::load($matches[1]);
       if (!$this->referrer) {
-        $this->referrer = User::load($matches[1]);
+        $this->referrer = $this->referrerInPath;
       }
     }
     // if (!$this->referrer && $request->query->has('refid')) {
@@ -277,13 +280,12 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
    * {@inheritdoc}
    */
   public function processOutbound($path, &$options = [], Request $request = NULL, BubbleableMetadata $bubbleable_metadata = NULL) {
-    if ($this->referrer && ( empty($options['route']) || !\Drupal::service('router.admin_context')->isAdminRoute($options['route']) ) ) {
+    if ($this->referrerInPath && ( empty($options['route']) || !\Drupal::service('router.admin_context')->isAdminRoute($options['route']) ) ) {
       // $options['query']['refid'] = $this->referrer->id();
-      $path .= '/refid' . $this->referrer->id();
-      if ($bubbleable_metadata) {
-        $bubbleable_metadata->addCacheContexts(['user']);
-        $bubbleable_metadata->addCacheableDependency($this->referrer);
-      }
+      $path .= '/refid' . $this->referrerInPath->id();
+      $bubbleable_metadata = $bubbleable_metadata ?: new BubbleableMetadata();
+      $bubbleable_metadata->addCacheContexts(['user_referral']);
+      // $bubbleable_metadata->addCacheableDependency($this->referrer);
     }
     return $path;
   }
