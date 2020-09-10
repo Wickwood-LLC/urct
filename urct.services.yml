@@ -6,3 +6,8 @@ services:
       - { name: path_processor_inbound, priority: 200 }
       - { name: path_processor_outbound, priority: 400 }
       - { name: event_subscriber }
+  cache_context.user_referral:
+    class: Drupal\urct\Cache\Context\ReferralPathCacheContext
+    arguments: ['@urct.referral_manager']
+    tags:
+      - { name: cache.context }
