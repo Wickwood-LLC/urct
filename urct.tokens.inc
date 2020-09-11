@@ -20,9 +20,14 @@ function urct_token_info() {
     ],
   ];
 
+  $node['url-non-referral'] = [
+    'name' => t("Non referral canonical URL"),
+    'description' => t("The non-referral canonical URL of the node."),
+  ];
+
   return [
     'types' => $types,
-    'tokens' => [],
+    'tokens' => ['node' => $node],
   ];
 }
 
@@ -39,7 +44,45 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
     // $bubbleable_metadata->addCacheableDependency($account);
     $replacements += $token_service->generate('user', $tokens, ['user' => $account], $options, $bubbleable_metadata);
   }
+  else if ($type == 'node' && !empty($data['node'])) {
+    /** @var \Drupal\node\NodeInterface $node */
+    $node = $data['node'];
+
+    $url_options = ['absolute' => TRUE];
+    if (isset($options['langcode'])) {
+      $url_options['language'] = \Drupal::languageManager()->getLanguage($options['langcode']);
+    }
+
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'url-non-referral':
+          $url = $node->toUrl('canonical', $url_options)->toString();
+          $url_parts = parse_url($url);
+          if (preg_match('~refid(\d+)$~', $url_parts['path'], $matches)) {
+            $parts = array_filter(explode('/', $url_parts['path']));
+            array_pop($parts);
+            $url_parts['path'] = '/' . implode('/', $parts);
+            $url = unparse_url($url_parts);
+          }
+          $replacements[$original] = $url;
+          break;
+      }
+    }
+  }
   return $replacements;
+}
+
+function unparse_url($parsed_url) {
+  $scheme   = isset($parsed_url['scheme']) ? $parsed_url['scheme'] . '://' : '';
+  $host     = isset($parsed_url['host']) ? $parsed_url['host'] : '';
+  $port     = isset($parsed_url['port']) ? ':' . $parsed_url['port'] : '';
+  $user     = isset($parsed_url['user']) ? $parsed_url['user'] : '';
+  $pass     = isset($parsed_url['pass']) ? ':' . $parsed_url['pass']  : '';
+  $pass     = ($user || $pass) ? "$pass@" : '';
+  $path     = isset($parsed_url['path']) ? $parsed_url['path'] : '';
+  $query    = isset($parsed_url['query']) ? '?' . $parsed_url['query'] : '';
+  $fragment = isset($parsed_url['fragment']) ? '#' . $parsed_url['fragment'] : '';
+  return "$scheme$user$pass$host$port$path$query$fragment";
 }
 
 
