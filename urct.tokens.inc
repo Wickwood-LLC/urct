@@ -7,6 +7,7 @@
 
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\user\Entity\User;
+use Drupal\Core\Url;
 
 /**
  * Implements hook_token_info().
@@ -25,9 +26,19 @@ function urct_token_info() {
     'description' => t("The non-referral canonical URL of the node."),
   ];
 
+  $site['url-non-referral'] = [
+    'name' => t("Non referral URL"),
+    'description' => t("The non-referral of the site's front page."),
+  ];
+
+  $url['non-referral'] = [
+    'name' => t('Non referral URL'),
+    'description' => t('The non-referral URL.'),
+  ];
+
   return [
     'types' => $types,
-    'tokens' => ['node' => $node],
+    'tokens' => ['node' => $node, 'url' => $url, 'site' => $site],
   ];
 }
 
@@ -37,6 +48,11 @@ function urct_token_info() {
 function urct_tokens($type, $tokens, array $data, array $options, BubbleableMetadata $bubbleable_metadata) {
   $token_service = \Drupal::token();
   $replacements = [];
+
+  $url_options = ['absolute' => TRUE];
+  if (isset($options['langcode'])) {
+    $url_options['language'] = \Drupal::languageManager()->getLanguage($options['langcode']);
+  }
 
   if ($type == 'referrer_from_cookie') {
     $account = \Drupal::service('urct.referral_manager')->getCurrentReferrer();
@@ -48,15 +64,52 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
     /** @var \Drupal\node\NodeInterface $node */
     $node = $data['node'];
 
-    $url_options = ['absolute' => TRUE];
-    if (isset($options['langcode'])) {
-      $url_options['language'] = \Drupal::languageManager()->getLanguage($options['langcode']);
-    }
-
     foreach ($tokens as $name => $original) {
       switch ($name) {
         case 'url-non-referral':
           $url = $node->toUrl('canonical', $url_options)->toString();
+          $url_parts = parse_url($url);
+          if (preg_match('~refid(\d+)$~', $url_parts['path'], $matches)) {
+            $parts = array_filter(explode('/', $url_parts['path']));
+            array_pop($parts);
+            $url_parts['path'] = '/' . implode('/', $parts);
+            $url = unparse_url($url_parts);
+          }
+          $replacements[$original] = $url;
+          break;
+      }
+    }
+  }
+  else if ($type == 'url' && !empty($data['url'])) {
+    /** @var \Drupal\Core\Url $url */
+    $url = $data['url'];
+
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'non-referral':
+          $unaliased = clone $url;
+
+          $url_string = $url->toString();
+          $url_parts = parse_url($url_string);
+          if (preg_match('~refid(\d+)$~', $url_parts['path'], $matches)) {
+            $parts = array_filter(explode('/', $url_parts['path']));
+            array_pop($parts);
+            $url_parts['path'] = '/' . implode('/', $parts);
+            $url_string = unparse_url($url_parts);
+          }
+          $replacements[$original] = $url_string;
+          break;
+      }
+    }
+  }
+  else if ($type == 'site') {
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'url-non-referral':
+          /** @var \Drupal\Core\GeneratedUrl $result */
+          $result = Url::fromRoute('<front>', [], $url_options)->toString(TRUE);
+          $bubbleable_metadata->addCacheableDependency($result);
+          $url = $result->getGeneratedUrl();
           $url_parts = parse_url($url);
           if (preg_match('~refid(\d+)$~', $url_parts['path'], $matches)) {
             $parts = array_filter(explode('/', $url_parts['path']));
@@ -84,5 +137,3 @@ function unparse_url($parsed_url) {
   $fragment = isset($parsed_url['fragment']) ? '#' . $parsed_url['fragment'] : '';
   return "$scheme$user$pass$host$port$path$query$fragment";
 }
-
-
