@@ -294,7 +294,8 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
     $response = $event->getResponse();
     if ($this->referrer && $response instanceof RedirectResponse) {
       $target_url = $response->getTargetUrl();
-      $response->setTargetUrl($target_url . '/refid' . $this->referrer->id());
+      $target_url = rtrim($target_url, '/') . '/refid' . $this->referrer->id();
+      $response->setTargetUrl($target_url);
     }
   }
 
