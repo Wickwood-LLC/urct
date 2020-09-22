@@ -103,15 +103,19 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
         if (!empty($fallback_type)) {
           $last_selected_uid = $config->get('last_selected_uid');
           $last_selected_uid = $last_selected_uid ?? 0;
+          $last_selected_referral_type = $config->get('last_selected_uid') ?? NULL;
 
-          if ($fallback_type == 'roles') {
-            $roles_condition = $config->get('roles_condition');
-            if ($roles_condition == 'and') {
-              $uid = $this->getUserHavingAllRoles($last_selected_uid);
-            }
-            else {
-              $uid = $this->getUserHavingAnyRoles($last_selected_uid);
-            }
+          // if ($fallback_type == 'roles') {
+          //   $roles_condition = $config->get('roles_condition');
+          //   if ($roles_condition == 'and') {
+          //     $uid = $this->getUserHavingAllRoles($last_selected_uid);
+          //   }
+          //   else {
+          //     $uid = $this->getUserHavingAnyRoles($last_selected_uid);
+          //   }
+          // }
+          if ($fallback_type == 'referral_types') {
+            $uid = $this->getUserFromReferralTypes($last_selected_uid, $last_selected_referral_type);
           }
           else if ($fallback_type == 'view') {
             $uid = $this->getUserFromView($last_selected_uid);
@@ -147,57 +151,124 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   }
 
 
-  protected function getUserHavingAnyRoles($last_selected_uid) {
-    static $times = 0;
-    $selected_uid = NULL;
-    $config = $this->configFactory->getEditable('urct.settings');
-    $roles = array_values(array_filter($config->get('roles')));
+  // protected function getUserHavingAnyRoles($last_selected_uid) {
+  //   static $times = 0;
+  //   $selected_uid = NULL;
+  //   $config = $this->configFactory->getEditable('urct.settings');
+  //   $roles = array_values(array_filter($config->get('roles')));
 
-    $query = \Drupal::entityQuery('user')
-      ->condition('status', 1)
-      ->condition('uid', $last_selected_uid, '>');
-      $query->condition('roles', $roles, 'IN');
-    $ids = $query->range(0, 1)->execute();
-    if (empty($ids) && $times == 0) {
-      $times++;
-      $selected_uid = $this->getUserHavingAnyRoles(0);
+  //   $query = \Drupal::entityQuery('user')
+  //     ->condition('status', 1)
+  //     ->condition('uid', $last_selected_uid, '>');
+  //     $query->condition('roles', $roles, 'IN');
+  //   $ids = $query->range(0, 1)->execute();
+  //   if (empty($ids) && $times == 0) {
+  //     $times++;
+  //     $selected_uid = $this->getUserHavingAnyRoles(0);
+  //   }
+  //   else {
+  //     $selected_uid = reset($ids);
+  //     $config->set('last_selected_uid', $selected_uid);
+  //     $config->save();
+  //   }
+  //   return $selected_uid;
+  // }
+
+  public function getUserFromReferralTypes($last_selected_uid, $last_selected_referral_type) {
+    $config = $this->configFactory->getEditable('urct.settings');
+    $referral_types = $config->get('referral_types');
+
+    $query = \Drupal::entityQuery('node');
+    $connection = \Drupal::service('database');
+    $count = 0;
+    $queries = [];
+    foreach ($referral_types as $referral_type_id) {
+      $referral_type = UserReferralType::load($referral_type_id);
+      $roles = $referral_type->getRoles();
+      $query = $connection->select('users', 'u');
+      $query->join('user__roles', 'ur', "u.uid = ur.entity_id AND ur.deleted = 0 AND ur.bundle = 'user'");
+      $query->condition('ur.roles_target_id', $roles, 'IN');
+      $query->addField('u', 'uid');
+      $query->addExpression("'$referral_type_id'", 'referral_type');
+      $queries[] = $query;
+      $count++;
     }
-    else {
-      $selected_uid = reset($ids);
-      $config->set('last_selected_uid', $selected_uid);
-      $config->save();
+
+    $main_query = array_shift($queries);
+    while ($query = array_shift($queries)) {
+      $main_query->union($query, 'UNION ALL');
     }
-    return $selected_uid;
+    $result = $main_query->execute()->fetchAll();
+
+    $referral_types_filter_by_view = $config->get('referral_types_filter_by_view') ?? FALSE;
+
+    if ($referral_types_filter_by_view) {
+
+      $view_name = 'urct_referral_fallbacks';
+      $view = Views::getView($view_name);
+
+      // Set which view display we want.
+      $view->setDisplay('default');
+      // To initialize the query.
+      $view->build();
+      // Get underlaying SQL select query.
+      // We will execute the select query directly without executing the whole view.
+      // Executing the whole view will cause to load the user objects will increase the memory usage, which we want never to happen here.
+      $query = $view->getQuery()->query();
+      $fields = &$query->getFields();
+      // Ensure uid is always as first column, so we can take it easily from the result.
+      unset($fields['uid']);
+      $fields = [
+        'uid' => [
+          'field' => 'uid',
+          'table' => 'users_field_data',
+          'alias' => 'uid',
+        ],
+      ] + $fields;
+
+      $uids_to_filter_out = $query->execute()->fetchCol();
+      $referral_types_filter_by_view_negate = $config->get('referral_types_filter_by_view_negate') ?? FALSE;
+
+      $result = array_filter($result, function($item) use($uids_to_filter_out, $referral_types_filter_by_view_negate) {
+        if (!$referral_types_filter_by_view_negate) {
+          return in_array($item->uid, $uids_to_filter_out);
+        }
+        else {
+          return !in_array($item->uid, $uids_to_filter_out);
+        }
+      });
+    }
+    $a = 0;
   }
 
-  protected function getUserHavingAllRoles($last_selected_uid) {
-    static $times = 0;
-    $selected_uid = NULL;
-    $config = $this->configFactory->getEditable('urct.settings');
-    $roles = array_values(array_filter($config->get('roles')));
+  // protected function getUserHavingAllRoles($last_selected_uid) {
+  //   static $times = 0;
+  //   $selected_uid = NULL;
+  //   $config = $this->configFactory->getEditable('urct.settings');
+  //   $roles = array_values(array_filter($config->get('roles')));
 
-    $database = \Drupal::database();
-    $query = $database->select('users_field_data', 'u');
-    foreach ($roles as $index => $role) {
-      $alias = 'ur_' . $index;
-      $query->join('user__roles', $alias, "u.uid = $alias.entity_id AND $alias.deleted = 0 AND $alias.roles_target_id = '$role'");
-    }
+  //   $database = \Drupal::database();
+  //   $query = $database->select('users_field_data', 'u');
+  //   foreach ($roles as $index => $role) {
+  //     $alias = 'ur_' . $index;
+  //     $query->join('user__roles', $alias, "u.uid = $alias.entity_id AND $alias.deleted = 0 AND $alias.roles_target_id = '$role'");
+  //   }
 
-    $query->fields('u', array('uid'));
-    $query->condition('uid', $last_selected_uid, '>');
+  //   $query->fields('u', array('uid'));
+  //   $query->condition('uid', $last_selected_uid, '>');
 
-    $id = $query->range(0, 1)->execute()->fetchField();
-    if (empty($id) && $times == 0) {
-      $times++;
-      $selected_uid = $this->getUserHavingAllRoles(0);
-    }
-    else {
-      $selected_uid = $id;
-      $config->set('last_selected_uid', $selected_uid);
-      $config->save();
-    }
-    return $selected_uid;
-  }
+  //   $id = $query->range(0, 1)->execute()->fetchField();
+  //   if (empty($id) && $times == 0) {
+  //     $times++;
+  //     $selected_uid = $this->getUserHavingAllRoles(0);
+  //   }
+  //   else {
+  //     $selected_uid = $id;
+  //     $config->set('last_selected_uid', $selected_uid);
+  //     $config->save();
+  //   }
+  //   return $selected_uid;
+  // }
 
   protected function getUserFromView($last_selected_uid) {
     static $times = 0;
