@@ -10,15 +10,27 @@ urct.settings:
     default_fallback_referrer:
       type: integer
       label: User ID of the account to be used a fallback referrer.
-    roles:
-      type: sequence
-      label: Roles to which to be used to select the user for falling back.
-    roles_condition:
-      type: sequence
+    # roles:
+    #   type: sequence
+    #   label: Roles to which to be used to select the user for falling back.
+    # roles_condition:
+    #   type: sequence
       label: How to consider the roles for matching. Whether user has to have any or all of selected roles.
+    referral_types:
+      type: sequence
+      label: One or more referral types to limit.
+    referral_types_filter_by_view:
+      type: boolean
+      label: Filter by view result
+    referral_types_filter_by_view_negate:
+      type: boolean
+      label: Negate filtering by view result
     last_selected_uid:
       type: integer
       label: User ID of the account selected as fallback referrer last time.
+    last_selected_referral_type:
+      type: string
+      label: Last select referral type for last selected uid
     roll_up:
       type: string
       label: The roll-up method to follow in case referrer is not active.

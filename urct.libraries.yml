@@ -1,0 +1,5 @@
+urct.settings-form:
+  version: 1.0
+  css:
+    component:
+      css/settings-form.css: {}
