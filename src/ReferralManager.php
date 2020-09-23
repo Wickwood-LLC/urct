@@ -117,9 +117,9 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
           if ($fallback_type == 'referral_types') {
             $uid = $this->getUserFromReferralTypes($last_selected_uid, $last_selected_referral_type);
           }
-          else if ($fallback_type == 'view') {
-            $uid = $this->getUserFromView($last_selected_uid);
-          }
+          // else if ($fallback_type == 'view') {
+          //   $uid = $this->getUserFromView($last_selected_uid);
+          // }
         }
         if (!empty($uid) && $config->get('roll_up') == 'enroller') {
           $referrer_account = User::load($uid);
@@ -270,62 +270,62 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   //   return $selected_uid;
   // }
 
-  protected function getUserFromView($last_selected_uid) {
-    static $times = 0;
-    $selected_uid = NULL;
-    $config = $this->configFactory->getEditable('urct.settings');
-    $view_name = 'urct_referral_fallbacks';
+  // protected function getUserFromView($last_selected_uid) {
+  //   static $times = 0;
+  //   $selected_uid = NULL;
+  //   $config = $this->configFactory->getEditable('urct.settings');
+  //   $view_name = 'urct_referral_fallbacks';
 
-    $view = Views::getView($view_name);
+  //   $view = Views::getView($view_name);
 
-    // Set which view display we want.
-    $view->setDisplay('default');
-    // To initialize the query.
-    $view->build();
-    // Get underlaying SQL select query.
-    // We will execute the select query directly without executing the whole view.
-    // Executing the whole view will cause to load the user objects will increase the memory usage, which we want never to happen here.
-    $query = $view->getQuery()->query();
-    $fields = &$query->getFields();
-    // Ensure uid is always as first column, so we can take it easily from the result.
-    unset($fields['uid']);
-    $fields = [
-      'uid' => [
-        'field' => 'uid',
-        'table' => 'users_field_data',
-        'alias' => 'uid',
-      ],
-    ] + $fields;
+  //   // Set which view display we want.
+  //   $view->setDisplay('default');
+  //   // To initialize the query.
+  //   $view->build();
+  //   // Get underlaying SQL select query.
+  //   // We will execute the select query directly without executing the whole view.
+  //   // Executing the whole view will cause to load the user objects will increase the memory usage, which we want never to happen here.
+  //   $query = $view->getQuery()->query();
+  //   $fields = &$query->getFields();
+  //   // Ensure uid is always as first column, so we can take it easily from the result.
+  //   unset($fields['uid']);
+  //   $fields = [
+  //     'uid' => [
+  //       'field' => 'uid',
+  //       'table' => 'users_field_data',
+  //       'alias' => 'uid',
+  //     ],
+  //   ] + $fields;
 
-    $results = $query->execute()->fetchCol();
+  //   $results = $query->execute()->fetchCol();
 
-    if (!empty($results)) {
-      if (!empty($last_selected_uid)) {
-        $index_of_last_selected_uid = array_search($last_selected_uid, $results);
-        if ($index_of_last_selected_uid === FALSE || $index_of_last_selected_uid == (count($results) - 1)) {
-          // Could not find or last selected item is las position in result.
-          // Select the first item from the result.
-          $selected_uid = reset($results);
-        }
-        else {
-          $selected_uid = $results[$index_of_last_selected_uid + 1];
-        }
-      }
-      else {
-        // No information about last selected uid.
-        // Start with first item in the result.
-        $selected_uid = reset($results);
-      }
-    }
-    else {
-      $selected_uid = NULL;
-    }
+  //   if (!empty($results)) {
+  //     if (!empty($last_selected_uid)) {
+  //       $index_of_last_selected_uid = array_search($last_selected_uid, $results);
+  //       if ($index_of_last_selected_uid === FALSE || $index_of_last_selected_uid == (count($results) - 1)) {
+  //         // Could not find or last selected item is las position in result.
+  //         // Select the first item from the result.
+  //         $selected_uid = reset($results);
+  //       }
+  //       else {
+  //         $selected_uid = $results[$index_of_last_selected_uid + 1];
+  //       }
+  //     }
+  //     else {
+  //       // No information about last selected uid.
+  //       // Start with first item in the result.
+  //       $selected_uid = reset($results);
+  //     }
+  //   }
+  //   else {
+  //     $selected_uid = NULL;
+  //   }
 
-    $config->set('last_selected_uid', $selected_uid);
-    $config->save();
+  //   $config->set('last_selected_uid', $selected_uid);
+  //   $config->save();
 
-    return $selected_uid;
-  }
+  //   return $selected_uid;
+  // }
 
   /**
    * {@inheritdoc}
