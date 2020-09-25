@@ -19,6 +19,7 @@ use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 use Drupal\user_referral\Event\UserReferralCookieEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Drupal\Core\Routing\LocalRedirectResponse;
+use Drupal\Core\Session\AccountProxyInterface;
 
 class ReferralManager implements InboundPathProcessorInterface, OutboundPathProcessorInterface, EventSubscriberInterface {
 
@@ -55,17 +56,27 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   protected $crawler;
 
   /**
+   * The current user.
+   *
+   * @var \Drupal\Core\Session\AccountProxyInterface
+   */
+  protected $currentUser;
+
+  /**
    * Constructs a BookManager object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory.
    * @param \Drupal\Core\PageCache\ResponsePolicy\KillSwitch $killSwitch
    *   The kill switch.
+   * @param \Drupal\Core\Session\AccountProxyInterface $account
+   *   The current user.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, KillSwitch $killSwitch) {
+  public function __construct(ConfigFactoryInterface $config_factory, KillSwitch $killSwitch, AccountProxyInterface $account) {
     $this->configFactory = $config_factory;
     $this->killSwitch = $killSwitch;
     $this->crawler = NULL;
+    $this->currentUser = $account;
   }
 
 
@@ -156,6 +167,13 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
         }
 
         $this->setPathReferralCookie($referral_item);
+      }
+      if ($referral_item) {
+        $referral_type = UserReferralType::load($referral_item->type);
+        $account = User::load($referral_item->uid);
+        if ($referral_type && $account) {
+          $referral_item->refid = $referral_type->getAccountReferralID($account);
+        }
       }
       $this->referralItem = $referral_item;
     }
@@ -388,20 +406,20 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   // }
 
   public function checkPathReferral($path) {
-    if (preg_match('~/refid(\d+)-(.+)$~', $path, $matches)) {
+    if (preg_match('~/([a-zA-Z]+)-refid-(\w+)$~', $path, $matches)) {
       $parts = array_filter(explode('/', $path));
       array_pop($parts);
       $path = '/' . implode('/', $parts);
       $referral_item = new \stdClass();
-      $referral_item->uid = $matches[1];
-      $referral_item->type = $matches[2];
+      $referral_item->refid = $matches[1];
+      $referral_item->type = str_replace('-', '_', $matches[2]);
       return $referral_item;
     }
     return NULL;
   }
 
   public function appendPathReferralToPath($path, $referral_item) {
-    return rtrim($path, '/') . '/refid' . $referral_item->uid . '-' . $referral_item->type;
+    return rtrim($path, '/') . '/' . $referral_item->refid . '-refid-' . $referral_item->type;
   }
 
   /**
@@ -449,9 +467,16 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   public function onReferralCookieBeingSet(UserReferralCookieEvent $event) {
     // Get referrer from cookie being set.
     $cookie = $event->getCookie();
-    $this->referralItem = new \stdClass();
-    $this->referralItem->uid = $cookie->uid;
-    $this->referralItem->type = $cookie->type;
+    $account = User::load($cookie->uid);
+    $referral_type = UserReferralType::load($cookie->type);
+    if ($account && $referral_type) {
+      $referral_id = $referral_type->getAccountReferralID($account);
+      if ($referral_id) {
+        $this->referralItem = new \stdClass();
+        $this->referralItem->refid = $referral_id;
+        $this->referralItem->type = $cookie->type;
+      }
+    }
   }
 
   /**
@@ -492,11 +517,17 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
 
   public function setPathReferralCookie($referral_item) {
     $existing_cookie = isset($_COOKIE[self::COOKIE_NAME]) ? json_decode($_COOKIE[self::COOKIE_NAME]) : NULL;
-    if (!$existing_cookie || $existing_cookie->uid != $referral_item->uid || $existing_cookie->type != $referral_item->type) {
-      $cookie = new \stdClass();
-      $cookie->uid = $referral_item->uid;
-      $cookie->type = $referral_item->type;
-      setcookie(self::COOKIE_NAME, json_encode($cookie), time() + 7 * 24 * 60 * 60, '/');
+    $referral_type = UserReferralType::load($referral_item->type);
+    if ($referral_type) {
+      $account = $referral_type->getReferralIDAccount($referral_item->refid);
+      if ($account) {
+        if (!$existing_cookie || $existing_cookie->uid != $account->id() || $existing_cookie->type != $referral_item->type) {
+          $cookie = new \stdClass();
+          $cookie->uid = $account->id();
+          $cookie->type = $referral_item->type;
+          setcookie(self::COOKIE_NAME, json_encode($cookie), time() + 7 * 24 * 60 * 60, '/');
+        }
+      }
     }
   }
 
