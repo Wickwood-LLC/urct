@@ -43,9 +43,9 @@ class ReferralPathCacheContext implements CacheContextInterface {
    */
   public function getContext() {
     // return $this->permissionsHashGenerator->generate($this->user);
-    $referrer = $this->referralManager->getCurrentReferrer();
-    if ($referrer) {
-      return $referrer->id();
+    $referral_item = $this->referralManager->getCurrentReferralItem();
+    if (!empty($referral_item->uid)) {
+      return $referral_item->uid;
     }
   }
 
@@ -55,9 +55,9 @@ class ReferralPathCacheContext implements CacheContextInterface {
   public function getCacheableMetadata() {
     $cacheable_metadata = new CacheableMetadata();
 
-    $referrer = $this->referralManager->getCurrentReferrer();
-    if ($referrer) {
-      $tags = ['referrer:' . $referrer->id()];
+    $referral_item = $this->referralManager->getCurrentReferralItem();
+    if (!empty($referral_item->uid)) {
+      $tags = ['referrer:' . $referral_item->uid];
       $cacheable_metadata->setCacheTags($tags);
     }
 
