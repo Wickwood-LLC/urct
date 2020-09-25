@@ -63,6 +63,13 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   protected $currentUser;
 
   /**
+   * Variable indicating if current page is admin page.
+   *
+   * @var boolean
+   */
+  protected $isAdminPage;
+
+  /**
    * Constructs a BookManager object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -77,6 +84,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
     $this->killSwitch = $killSwitch;
     $this->crawler = NULL;
     $this->currentUser = $account;
+    $this->isAdminPage = \Drupal::service('router.admin_context')->isAdminRoute();
   }
 
 
@@ -486,6 +494,10 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
    *   The Event to process.
    */
   public function onKernelRequestRedirect(GetResponseEvent $event) {
+    if ($this->isAdminPage) {
+      // Skip on admin pages.
+      return;
+    }
     $request = $event->getRequest();
     // Get the requested path minus the base path.
     $path = $request->getPathInfo();
