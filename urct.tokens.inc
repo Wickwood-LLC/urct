@@ -55,7 +55,8 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
   }
 
   if ($type == 'referrer_from_cookie') {
-    $account = \Drupal::service('urct.referral_manager')->getCurrentReferrer();
+    $referral_item = \Drupal::service('urct.referral_manager')->getCurrentReferralItem();
+    $account = User::load($referral_item->uid);
     $bubbleable_metadata->addCacheContexts(['user_referral']);
     // $bubbleable_metadata->addCacheableDependency($account);
     $replacements += $token_service->generate('user', $tokens, ['user' => $account], $options, $bubbleable_metadata);
