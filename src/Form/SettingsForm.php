@@ -34,7 +34,7 @@ class SettingsForm extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('urct.settings');
 
-    $default_fallback_referrer_id = $config->get('default_fallback_referrer');
+    $default_fallback_referrer_id = $form_state->getValue('default_fallback_referrer') ?? $config->get('default_fallback_referrer');
 
     if (!empty($default_fallback_referrer_id)) {
       $default_fallback_referrer = User::load($default_fallback_referrer_id);
@@ -46,6 +46,38 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('Default referrer user'),
       '#default_value' => $default_fallback_referrer,
       '#description' => $this->t('Type a name to find required user and select. This user account will be used as referrer when system fails to get a referrer for a vistior through any of fallback methods configured below.'),
+      '#required' => TRUE,
+      '#ajax' => [
+        'callback' => [$this, 'refreshReferralTypeField'],
+        // 'disable-refocus' => FALSE, // Or TRUE to prevent re-focusing on the triggering element.
+        'event' => 'change',
+        'wrapper' => 'urct-settings-default-referral-type', // This element is updated with this AJAX callback.
+        'progress' => [
+          'type' => 'throbber',
+          'message' => $this->t('Checking availability...'),
+        ],
+      ]
+    ];
+
+    $default_referrer_referral_type_options = [];
+    if ($default_fallback_referrer) {
+      foreach (UserReferralType::loadMultiple() as $referral_type_id => $referral_type) {
+        $user_roles = $default_fallback_referrer->getRoles();
+        $referral_type_roles = $referral_type->getRoles();
+        if (!empty(array_intersect($referral_type_roles, $user_roles))) {
+          $default_referrer_referral_type_options[$referral_type_id] = $referral_type->label();
+        }
+      }
+    }
+
+    $form['default_fallback_referrer_referral_type'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Default referral type'),
+      '#options' => $default_referrer_referral_type_options,
+      '#default_value' => $config->get('default_fallback_referrer_referral_type') ?? [],
+      '#description' => $this->t('Select the referral type to be used for fallback.'),
+      '#prefix' => '<div id="urct-settings-default-referral-type" class="indent-1">',
+      '#suffix' => '</div>',
       '#required' => TRUE,
     ];
 
@@ -215,6 +247,7 @@ class SettingsForm extends ConfigFormBase {
     $config = $this->config('urct.settings');
     $config->set('fallback_type', $form_state->getValue('fallback_type'));
     $config->set('default_fallback_referrer', $form_state->getValue('default_fallback_referrer'));
+    $config->set('default_fallback_referrer_referral_type', $form_state->getValue('default_fallback_referrer_referral_type'));
     // $config->set('roles', $form_state->getValue('roles'));
     // $config->set('roles_condition', $form_state->getValue('roles_condition'));
     $config->set('referral_types', $form_state->getValue('referral_types'));
@@ -226,6 +259,10 @@ class SettingsForm extends ConfigFormBase {
     $config->save();
 
     parent::submitForm($form, $form_state);
+  }
+
+  public function refreshReferralTypeField(array &$form, FormStateInterface $form_state) {
+    return $form['default_fallback_referrer_referral_type'];
   }
 
 }
