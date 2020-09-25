@@ -95,7 +95,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
         }
       }
       if (empty($referral_item)) {
-        if ($this->isBotAgent()) {
+        if ($this->isCrawler()) {
           $default_fallback_referrer_id = $config->get('default_fallback_referrer');
           if (!empty($default_fallback_referrer_id)) {
             $referral_item = new \stdClass();
@@ -167,7 +167,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
    *
    * @return boolean
    */
-  public function isBotAgent() {
+  public function isCrawler() {
     if (!isset($this->crawler)) {
       $config = $this->configFactory->get('urct.settings');
       $bot_agents = $config->get('bot_agents');
@@ -466,7 +466,8 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
     // Get the requested path minus the base path.
     $path = $request->getPathInfo();
 
-    if (!$this->checkPathReferral($path)) {
+    if (!$this->checkPathReferral($path) && !$this->isCrawler()) {
+      // Get a fallback referrer.
       $referral_item = $this->getCurrentReferralItem();
       $path = rtrim($path, '/') . '/refid' . $referral_item->uid . '-' . $referral_item->type;
       $qs = $request->getQueryString();
