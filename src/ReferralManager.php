@@ -420,9 +420,6 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
       array_pop($parts);
       $path = '/' . implode('/', $parts);
     }
-    // if (!$this->referrer && $request->query->has('refid')) {
-    //   $this->referrer = User::load($request->query->get('refid'));
-    // }
     return $path;
   }
 
@@ -431,11 +428,9 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
    */
   public function processOutbound($path, &$options = [], Request $request = NULL, BubbleableMetadata $bubbleable_metadata = NULL) {
     if ($this->referralItem && ( empty($options['route']) || !\Drupal::service('router.admin_context')->isAdminRoute($options['route']) ) ) {
-      // $options['query']['refid'] = $this->referrer->id();
       $path = $this->appendPathReferralToPath($path, $this->referralItem);
       $bubbleable_metadata = $bubbleable_metadata ?: new BubbleableMetadata();
       $bubbleable_metadata->addCacheContexts(['user_referral']);
-      // $bubbleable_metadata->addCacheableDependency($this->referrer);
     }
     return $path;
   }
