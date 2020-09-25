@@ -1,9 +1,14 @@
 services:
+  urct.referral_url_handler:
+    class: Drupal\urct\ReferralUrlHandler
+    arguments: []
+    tags:
+      - { name: path_processor_inbound, priority: 300 }
   urct.referral_manager:
     class: Drupal\urct\ReferralManager
     arguments: ['@config.factory', '@page_cache_kill_switch', '@current_user']
     tags:
-      - { name: path_processor_inbound, priority: 200 }
+      # - { name: path_processor_inbound, priority: 200 }
       - { name: path_processor_outbound, priority: 200 }
       - { name: event_subscriber }
   cache_context.user_referral:

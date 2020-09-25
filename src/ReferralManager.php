@@ -21,9 +21,8 @@ use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Drupal\Core\Routing\LocalRedirectResponse;
 use Drupal\Core\Session\AccountProxyInterface;
 
-class ReferralManager implements InboundPathProcessorInterface, OutboundPathProcessorInterface, EventSubscriberInterface {
+class ReferralManager implements OutboundPathProcessorInterface, EventSubscriberInterface {
 
-  const COOKIE_NAME = 'urct_referral';
   /**
    * Referrer user id and referral type.
    *
@@ -31,10 +30,10 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
    */
   protected $referralItem;
 
-  /**
-   * @var \stdClass;
-   */
-  protected $referralItemInPath;
+  // /**
+  //  * @var \stdClass;
+  //  */
+  // protected $referralItemInPath;
 
   /**
    * Config Factory Service Object.
@@ -84,7 +83,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
     $this->killSwitch = $killSwitch;
     $this->crawler = NULL;
     $this->currentUser = $account;
-    $this->isAdminPage = \Drupal::service('router.admin_context')->isAdminRoute();
+    // $this->isAdminPage = \Drupal::service('router.admin_context')->isAdminRoute();
   }
 
 
@@ -104,9 +103,9 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
           $referral_item->type = $cookie->type;
         }
       }
-      else if (isset($_COOKIE[self::COOKIE_NAME])) {
+      else if (isset($_COOKIE[ReferralUrlHandler::COOKIE_NAME])) {
         // Retrieve referral info from the cookie set by referral path item
-        $cookie = json_decode($_COOKIE[self::COOKIE_NAME]);
+        $cookie = json_decode($_COOKIE[ReferralUrlHandler::COOKIE_NAME]);
         if (!empty($cookie) && isset($cookie->uid)) {
           $referral_item = new \stdClass();
           $referral_item->uid = $cookie->uid;
@@ -174,7 +173,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
           }
         }
 
-        $this->setPathReferralCookie($referral_item);
+        ReferralUrlHandler::setPathReferralCookie($referral_item);
       }
       if ($referral_item) {
         $referral_type = UserReferralType::load($referral_item->type);
@@ -430,24 +429,24 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
     return rtrim($path, '/') . '/' . $referral_item->refid . '-refid-' . $referral_item->type;
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function processInbound($path, Request $request) {
-    if ($referral_item = $this->checkPathReferral($path)) {
-      $request->attributes->add(['_disable_route_normalizer' => TRUE]);
-      $this->referralItemInPath = $referral_item;
-      $this->setPathReferralCookie($this->referralItemInPath);
-      if (!$this->referralItem) {
-        $this->referralItem = $this->referralItemInPath;
-      }
+  // /**
+  //  * {@inheritdoc}
+  //  */
+  // public function processInbound($path, Request $request) {
+  //   if ($referral_item = $this->checkPathReferral($path)) {
+  //     $request->attributes->add(['_disable_route_normalizer' => TRUE]);
+  //     $this->referralItemInPath = $referral_item;
+  //     $this->setPathReferralCookie($this->referralItemInPath);
+  //     if (!$this->referralItem) {
+  //       $this->referralItem = $this->referralItemInPath;
+  //     }
 
-      $parts = array_filter(explode('/', $path));
-      array_pop($parts);
-      $path = '/' . implode('/', $parts);
-    }
-    return $path;
-  }
+  //     $parts = array_filter(explode('/', $path));
+  //     array_pop($parts);
+  //     $path = '/' . implode('/', $parts);
+  //   }
+  //   return $path;
+  // }
 
   /**
    * {@inheritdoc}
@@ -463,7 +462,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
 
   public function onKernelResponse(FilterResponseEvent $event) {
     $response = $event->getResponse();
-    if ($response instanceof RedirectResponse) {
+    if ($response instanceof RedirectResponse && !\Drupal::service('router.admin_context')->isAdminRoute()) {
       $target_url = $response->getTargetUrl();
       if ($this->referralItem && !$this->checkPathReferral($target_url)) {
         $target_url = $this->appendPathReferralToPath($target_url, $this->referralItem);
@@ -494,7 +493,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
    *   The Event to process.
    */
   public function onKernelRequestRedirect(GetResponseEvent $event) {
-    if ($this->isAdminPage) {
+    if (\Drupal::service('router.admin_context')->isAdminRoute()) {
       // Skip on admin pages.
       return;
     }
@@ -502,6 +501,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
     // Get the requested path minus the base path.
     $path = $request->getPathInfo();
 
+    $url_handler = \Drupal::service('urct.referral_url_handler');
     if (!$this->checkPathReferral($path) && !$this->isCrawler()) {
       // Get a fallback referrer.
       $referral_item = $this->getCurrentReferralItem();
@@ -514,6 +514,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
       $response->getCacheableMetadata()->setCacheMaxAge(0);
       $this->killSwitch->trigger();
       $event->setResponse($response);
+      // $url_handler->setProcessed(TRUE);
     }
   }
 
@@ -523,24 +524,24 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   static function getSubscribedEvents() {
     $events[KernelEvents::RESPONSE][] = ['onKernelResponse'];
     $events[UserReferralCookieEvent::COOKIE_SET][] = ['onReferralCookieBeingSet'];
-    $events[KernelEvents::REQUEST][] = ['onKernelRequestRedirect', 100];
+    $events[KernelEvents::REQUEST][] = ['onKernelRequestRedirect', 30];
     return $events;
   }
 
-  public function setPathReferralCookie($referral_item) {
-    $existing_cookie = isset($_COOKIE[self::COOKIE_NAME]) ? json_decode($_COOKIE[self::COOKIE_NAME]) : NULL;
-    $referral_type = UserReferralType::load($referral_item->type);
-    if ($referral_type) {
-      $account = $referral_type->getReferralIDAccount($referral_item->refid);
-      if ($account) {
-        if (!$existing_cookie || $existing_cookie->uid != $account->id() || $existing_cookie->type != $referral_item->type) {
-          $cookie = new \stdClass();
-          $cookie->uid = $account->id();
-          $cookie->type = $referral_item->type;
-          setcookie(self::COOKIE_NAME, json_encode($cookie), time() + 7 * 24 * 60 * 60, '/');
-        }
-      }
-    }
-  }
+  // public function setPathReferralCookie($referral_item) {
+  //   $existing_cookie = isset($_COOKIE[self::COOKIE_NAME]) ? json_decode($_COOKIE[self::COOKIE_NAME]) : NULL;
+  //   $referral_type = UserReferralType::load($referral_item->type);
+  //   if ($referral_type) {
+  //     $account = $referral_type->getReferralIDAccount($referral_item->refid);
+  //     if ($account) {
+  //       if (!$existing_cookie || $existing_cookie->uid != $account->id() || $existing_cookie->type != $referral_item->type) {
+  //         $cookie = new \stdClass();
+  //         $cookie->uid = $account->id();
+  //         $cookie->type = $referral_item->type;
+  //         setcookie(self::COOKIE_NAME, json_encode($cookie), time() + 7 * 24 * 60 * 60, '/');
+  //       }
+  //     }
+  //   }
+  // }
 
 }

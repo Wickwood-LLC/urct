@@ -8,6 +8,7 @@
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\user\Entity\User;
 use Drupal\Core\Url;
+use Drupal\user_referral\Entity\UserReferralType;
 
 /**
  * Implements hook_token_info().
@@ -56,10 +57,13 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
 
   if ($type == 'referrer_from_cookie') {
     $referral_item = \Drupal::service('urct.referral_manager')->getCurrentReferralItem();
-    $account = User::load($referral_item->uid);
-    $bubbleable_metadata->addCacheContexts(['user_referral']);
-    // $bubbleable_metadata->addCacheableDependency($account);
-    $replacements += $token_service->generate('user', $tokens, ['user' => $account], $options, $bubbleable_metadata);
+    $referral_type = UserReferralType::load($referral_item->type);
+    if ($referral_type) {
+      $account = $referral_type->getReferralIDAccount($referral_item->refid);
+      $bubbleable_metadata->addCacheContexts(['user_referral']);
+      // $bubbleable_metadata->addCacheableDependency($account);
+      $replacements += $token_service->generate('user', $tokens, ['user' => $account], $options, $bubbleable_metadata);
+    }
   }
   else if ($type == 'node' && !empty($data['node'])) {
     /** @var \Drupal\node\NodeInterface $node */

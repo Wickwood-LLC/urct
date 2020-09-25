@@ -5,6 +5,8 @@ namespace Drupal\urct\Cache\Context;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Cache\Context\CacheContextInterface;
 use Drupal\urct\ReferralManager;
+use Drupal\user_referral\Entity\UserReferralType;
+use Drupal\user\Entity\User;
 
 /**
  * Defines the ReferralPathCacheContext service, for "per referrid in URL" caching.
@@ -44,9 +46,14 @@ class ReferralPathCacheContext implements CacheContextInterface {
   public function getContext() {
     // return $this->permissionsHashGenerator->generate($this->user);
     $referral_item = $this->referralManager->getCurrentReferralItem();
-    if (!empty($referral_item->uid)) {
-      return $referral_item->uid;
+    $referral_type = UserReferralType::load($referral_item->type);
+    if ($referral_type) {
+      $account = $referral_type->getReferralIDAccount($referral_item->refid);
+      if ($account) {
+        return $account->id();
+      }
     }
+    
   }
 
   /**
@@ -56,9 +63,13 @@ class ReferralPathCacheContext implements CacheContextInterface {
     $cacheable_metadata = new CacheableMetadata();
 
     $referral_item = $this->referralManager->getCurrentReferralItem();
-    if (!empty($referral_item->uid)) {
-      $tags = ['referrer:' . $referral_item->uid];
-      $cacheable_metadata->setCacheTags($tags);
+    $referral_type = UserReferralType::load($referral_item->type);
+    if ($referral_type) {
+      $account = $referral_type->getReferralIDAccount($referral_item->refid);
+      if ($account) {
+        $tags = ['referrer:' . $referral_item->uid];
+        $cacheable_metadata->setCacheTags($tags);
+      }
     }
 
     return $cacheable_metadata;
