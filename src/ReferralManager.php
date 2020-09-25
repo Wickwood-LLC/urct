@@ -457,7 +457,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
       }
       $response = new LocalRedirectResponse($request->getUriForPath($path) . $qs);
       $response->getCacheableMetadata()->setCacheMaxAge(0);
-      \Drupal::service('page_cache_kill_switch')->trigger();
+      $this->killSwitch->trigger();
       $event->setResponse($response);
     }
   }
