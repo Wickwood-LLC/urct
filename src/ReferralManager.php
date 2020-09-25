@@ -400,6 +400,10 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
     return NULL;
   }
 
+  public function appendPathReferralToPath($path, $referral_item) {
+    return rtrim($path, '/') . '/refid' . $referral_item->uid . '-' . $referral_item->type;
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -428,7 +432,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   public function processOutbound($path, &$options = [], Request $request = NULL, BubbleableMetadata $bubbleable_metadata = NULL) {
     if ($this->referralItem && ( empty($options['route']) || !\Drupal::service('router.admin_context')->isAdminRoute($options['route']) ) ) {
       // $options['query']['refid'] = $this->referrer->id();
-      $path .= '/refid' . $this->referralItem->uid . '-' . $this->referralItem->type;
+      $path = $this->appendPathReferralToPath($path, $this->referralItem);
       $bubbleable_metadata = $bubbleable_metadata ?: new BubbleableMetadata();
       $bubbleable_metadata->addCacheContexts(['user_referral']);
       // $bubbleable_metadata->addCacheableDependency($this->referrer);
@@ -441,7 +445,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
     if ($response instanceof RedirectResponse) {
       $target_url = $response->getTargetUrl();
       if ($this->referralItem && !$this->checkPathReferral($target_url)) {
-        $target_url = rtrim($target_url, '/') . '/refid' . $this->referralItem->uid . '-' . $this->referralItem->type;
+        $target_url = $this->appendPathReferralToPath($target_url, $this->referralItem);
         $response->setTargetUrl($target_url);
       }
     }
@@ -469,7 +473,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
     if (!$this->checkPathReferral($path) && !$this->isCrawler()) {
       // Get a fallback referrer.
       $referral_item = $this->getCurrentReferralItem();
-      $path = rtrim($path, '/') . '/refid' . $referral_item->uid . '-' . $referral_item->type;
+      $path = $this->appendPathReferralToPath($path, $referral_item);
       $qs = $request->getQueryString();
       if ($qs) {
         $qs = '?' . $qs;
