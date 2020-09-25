@@ -50,6 +50,11 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   protected $killSwitch;
 
   /**
+   * Indicates if current request is from a bot/crawler.
+   */
+  protected $crawler;
+
+  /**
    * Constructs a BookManager object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -60,6 +65,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   public function __construct(ConfigFactoryInterface $config_factory, KillSwitch $killSwitch) {
     $this->configFactory = $config_factory;
     $this->killSwitch = $killSwitch;
+    $this->crawler = NULL;
   }
 
 
@@ -89,24 +95,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
         }
       }
       if (empty($referral_item)) {
-        $bot_agents = $config->get('bot_agents');
-        $list = explode("\n", $bot_agents);
-        $list = array_map('trim', $list);
-        $list = array_map('strtolower', $list);
-        $list = array_filter($list, 'strlen');
-
-        $crawler = FALSE;
-        $request = \Drupal::request();
-        $userAgent = $request->headers->get('User-Agent');
-        foreach ($list as $position => $crawler_name_part) {
-          // Check for an explicit key.
-          $matches = [];
-          if (preg_match('/' . preg_quote($crawler_name_part, '/') . '/i', $userAgent, $matches)) {
-            $crawler = TRUE;
-            break;
-          }
-        }
-        if ($crawler) {
+        if ($this->isBotAgent()) {
           $default_fallback_referrer_id = $config->get('default_fallback_referrer');
           if (!empty($default_fallback_referrer_id)) {
             $referral_item = new \stdClass();
@@ -171,6 +160,35 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
       $this->referralItem = $referral_item;
     }
     return $this->referralItem;
+  }
+
+  /**
+   * Check if current request is from bot agent.
+   *
+   * @return boolean
+   */
+  public function isBotAgent() {
+    if (!isset($this->crawler)) {
+      $config = $this->configFactory->get('urct.settings');
+      $bot_agents = $config->get('bot_agents');
+      $list = explode("\n", $bot_agents);
+      $list = array_map('trim', $list);
+      $list = array_map('strtolower', $list);
+      $list = array_filter($list, 'strlen');
+
+      $this->crawler = FALSE;
+      $request = \Drupal::request();
+      $userAgent = $request->headers->get('User-Agent');
+      foreach ($list as $position => $crawler_name_part) {
+        // Check for an explicit key.
+        $matches = [];
+        if (preg_match('/' . preg_quote($crawler_name_part, '/') . '/i', $userAgent, $matches)) {
+          $this->crawler = TRUE;
+          break;
+        }
+      }
+    }
+    return $this->crawler;
   }
 
 
