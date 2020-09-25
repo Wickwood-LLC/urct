@@ -17,17 +17,23 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
 use Drupal\user_referral\Event\UserReferralCookieEvent;
+use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+use Drupal\Core\Routing\LocalRedirectResponse;
 
 class ReferralManager implements InboundPathProcessorInterface, OutboundPathProcessorInterface, EventSubscriberInterface {
 
+  const COOKIE_NAME = 'urct_referral';
   /**
-   * Referrer user object.
+   * Referrer user id and referral type.
    *
-   * @var \Drupal\user\Entity\User;
+   * @var \stdClass;
    */
-  protected $referrer;
+  protected $referralItem;
 
-  protected $referrerInPath;
+  /**
+   * @var \stdClass;
+   */
+  protected $referralItemInPath;
 
   /**
    * Config Factory Service Object.
@@ -57,21 +63,32 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   }
 
 
-  public function getCurrentReferrer() {
-    if (!isset($this->referrer)) {
+  public function getCurrentReferralItem() {
+    if (!isset($this->referralItem)) {
       $config = $this->configFactory->getEditable('urct.settings');
       if ($config->get('debug')) {
         $this->killSwitch->trigger();
       }
-      $uid = NULL;
+      $referral_item = NULL;
       if (isset($_COOKIE[UserReferralType::COOKIE_NAME])) {
-        // Retrieve referral info from the cookie
+        // Retrieve referral info from the cookie set by referral link
         $cookie = json_decode($_COOKIE[UserReferralType::COOKIE_NAME]);
         if (!empty($cookie) && isset($cookie->uid)) {
-          $uid = $cookie->uid;
+          $referral_item = new \stdClass();
+          $referral_item->uid = $cookie->uid;
+          $referral_item->type = $cookie->type;
         }
       }
-      if (empty($uid)) {
+      else if (isset($_COOKIE[self::COOKIE_NAME])) {
+        // Retrieve referral info from the cookie set by referral path item
+        $cookie = json_decode($_COOKIE[self::COOKIE_NAME]);
+        if (!empty($cookie) && isset($cookie->uid)) {
+          $referral_item = new \stdClass();
+          $referral_item->uid = $cookie->uid;
+          $referral_item->type = $cookie->type;
+        }
+      }
+      if (empty($referral_item)) {
         $bot_agents = $config->get('bot_agents');
         $list = explode("\n", $bot_agents);
         $list = array_map('trim', $list);
@@ -92,18 +109,20 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
         if ($crawler) {
           $default_fallback_referrer_id = $config->get('default_fallback_referrer');
           if (!empty($default_fallback_referrer_id)) {
-            $uid = $default_fallback_referrer_id;
+            $referral_item = new \stdClass();
+            $referral_item->uid = $default_fallback_referrer_id;
+            $referral_item->type = $config->get('default_fallback_referrer_referral_type');
           }
         }
       }
-      if (empty($uid)) {
+      if (empty($referral_item)) {
         // No referrer found from cookie. Fallback configured type.
 
         $fallback_type = $config->get('fallback_type');
         if (!empty($fallback_type)) {
-          $last_selected_uid = $config->get('last_selected_uid');
-          $last_selected_uid = $last_selected_uid ?? 0;
-          $last_selected_referral_type = $config->get('last_selected_uid') ?? NULL;
+          $last_selected = new \stdClass();
+          $last_selected->uid = $config->get('last_selected_uid') ?? 0;
+          $last_selected->type = $config->get('last_selected_referral_type') ?? NULL;
 
           // if ($fallback_type == 'roles') {
           //   $roles_condition = $config->get('roles_condition');
@@ -115,17 +134,17 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
           //   }
           // }
           if ($fallback_type == 'referral_types') {
-            $uid = $this->getUserFromReferralTypes($last_selected_uid, $last_selected_referral_type);
+            $referral_item = $this->getUserFromReferralTypes($last_selected);
           }
           // else if ($fallback_type == 'view') {
           //   $uid = $this->getUserFromView($last_selected_uid);
           // }
         }
-        if (!empty($uid) && $config->get('roll_up') == 'enroller') {
-          $referrer_account = User::load($uid);
+        if (!empty($referral_item->uid) && $config->get('roll_up') == 'enroller') {
+          $referrer_account = User::load($next_item->uid);
           do {
             if ($referrer_account && $referrer_account->isActive()) {
-              $uid = $referrer_account->id();
+              $referral_item->uid = $referrer_account->id();
               break;
             }
             else if ($referrer_account) {
@@ -138,16 +157,20 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
             }
           } while($referrer_account);
         }
-        if (empty($uid)) {
+        if (empty($referral_item->uid)) {
           $default_fallback_referrer_id = $config->get('default_fallback_referrer');
           if (!empty($default_fallback_referrer_id)) {
-            $uid = $default_fallback_referrer_id;
+            $referral_item = new \stdClass();
+            $referral_item->uid = $default_fallback_referrer_id;
+            $referral_item->type = $config->get('default_fallback_referrer_referral_type');
           }
         }
+
+        $this->setPathReferralCookie($referral_item);
       }
-      $this->referrer = User::load($uid);
+      $this->referralItem = $referral_item;
     }
-    return $this->referrer;
+    return $this->referralItem;
   }
 
 
@@ -174,7 +197,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   //   return $selected_uid;
   // }
 
-  public function getUserFromReferralTypes($last_selected_uid, $last_selected_referral_type) {
+  public function getUserFromReferralTypes($last_selected) {
     $config = $this->configFactory->getEditable('urct.settings');
     $referral_types = $config->get('referral_types');
 
@@ -189,7 +212,7 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
       $query->join('user__roles', 'ur', "u.uid = ur.entity_id AND ur.deleted = 0 AND ur.bundle = 'user'");
       $query->condition('ur.roles_target_id', $roles, 'IN');
       $query->addField('u', 'uid');
-      $query->addExpression("'$referral_type_id'", 'referral_type');
+      $query->addExpression("'$referral_type_id'", 'type');
       $queries[] = $query;
       $count++;
     }
@@ -229,16 +252,35 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
       $uids_to_filter_out = $query->execute()->fetchCol();
       $referral_types_filter_by_view_negate = $config->get('referral_types_filter_by_view_negate') ?? FALSE;
 
-      $result = array_filter($result, function($item) use($uids_to_filter_out, $referral_types_filter_by_view_negate) {
+      $result = array_values(array_filter($result, function($item) use($uids_to_filter_out, $referral_types_filter_by_view_negate) {
         if (!$referral_types_filter_by_view_negate) {
           return in_array($item->uid, $uids_to_filter_out);
         }
         else {
           return !in_array($item->uid, $uids_to_filter_out);
         }
-      });
+      }));
     }
-    $a = 0;
+    $position = -1;
+    foreach ($result as $key => $item) {
+      if ($item->uid == $last_selected->uid && $item->type == $last_selected->type) {
+        $position = $key;
+        break;
+      }
+    }
+    if ($position > -1 && $position != (count($result) - 1)) {
+      $next_item = $result[$position + 1];
+    }
+    else {
+      $next_item = reset($result);
+    }
+    if (!empty($next_item->uid)) {
+      $config->set('last_selected_uid', $next_item->uid);
+      $config->set('last_selected_referral_type', $next_item->type);
+      $config->save();
+    }
+
+    return $next_item;
   }
 
   // protected function getUserHavingAllRoles($last_selected_uid) {
@@ -327,19 +369,34 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   //   return $selected_uid;
   // }
 
+  public function checkPathReferral($path) {
+    if (preg_match('~/refid(\d+)-(.+)$~', $path, $matches)) {
+      $parts = array_filter(explode('/', $path));
+      array_pop($parts);
+      $path = '/' . implode('/', $parts);
+      $referral_item = new \stdClass();
+      $referral_item->uid = $matches[1];
+      $referral_item->type = $matches[2];
+      return $referral_item;
+    }
+    return NULL;
+  }
+
   /**
    * {@inheritdoc}
    */
   public function processInbound($path, Request $request) {
-    if (preg_match('~refid(\d+)$~', $path, $matches)) {
+    if ($referral_item = $this->checkPathReferral($path)) {
+      $request->attributes->add(['_disable_route_normalizer' => TRUE]);
+      $this->referralItemInPath = $referral_item;
+      $this->setPathReferralCookie($this->referralItemInPath);
+      if (!$this->referralItem) {
+        $this->referralItem = $this->referralItemInPath;
+      }
+
       $parts = array_filter(explode('/', $path));
       array_pop($parts);
       $path = '/' . implode('/', $parts);
-      $request->attributes->add(['_disable_route_normalizer' => TRUE]);
-      $this->referrerInPath = User::load($matches[1]);
-      if (!$this->referrer) {
-        $this->referrer = $this->referrerInPath;
-      }
     }
     // if (!$this->referrer && $request->query->has('refid')) {
     //   $this->referrer = User::load($request->query->get('refid'));
@@ -351,9 +408,9 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
    * {@inheritdoc}
    */
   public function processOutbound($path, &$options = [], Request $request = NULL, BubbleableMetadata $bubbleable_metadata = NULL) {
-    if ($this->referrerInPath && ( empty($options['route']) || !\Drupal::service('router.admin_context')->isAdminRoute($options['route']) ) ) {
+    if ($this->referralItem && ( empty($options['route']) || !\Drupal::service('router.admin_context')->isAdminRoute($options['route']) ) ) {
       // $options['query']['refid'] = $this->referrer->id();
-      $path .= '/refid' . $this->referrerInPath->id();
+      $path .= '/refid' . $this->referralItem->uid . '-' . $this->referralItem->type;
       $bubbleable_metadata = $bubbleable_metadata ?: new BubbleableMetadata();
       $bubbleable_metadata->addCacheContexts(['user_referral']);
       // $bubbleable_metadata->addCacheableDependency($this->referrer);
@@ -363,17 +420,46 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
 
   public function onKernelResponse(FilterResponseEvent $event) {
     $response = $event->getResponse();
-    if ($this->referrer && $response instanceof RedirectResponse) {
+    if ($response instanceof RedirectResponse) {
       $target_url = $response->getTargetUrl();
-      $target_url = rtrim($target_url, '/') . '/refid' . $this->referrer->id();
-      $response->setTargetUrl($target_url);
+      if ($this->referralItem && !$this->checkPathReferral($target_url)) {
+        $target_url = rtrim($target_url, '/') . '/refid' . $this->referralItem->uid . '-' . $this->referralItem->type;
+        $response->setTargetUrl($target_url);
+      }
     }
   }
 
   public function onReferralCookieBeingSet(UserReferralCookieEvent $event) {
     // Get referrer from cookie being set.
     $cookie = $event->getCookie();
-    $this->referrer = User::load($cookie->uid);
+    $this->referralItem = new \stdClass();
+    $this->referralItem->uid = $cookie->uid;
+    $this->referralItem->type = $cookie->type;
+  }
+
+  /**
+   * Performs a redirect if the URL not end with Referral ID.
+   *
+   * @param \Symfony\Component\HttpKernel\Event\GetResponseEvent $event
+   *   The Event to process.
+   */
+  public function onKernelRequestRedirect(GetResponseEvent $event) {
+    $request = $event->getRequest();
+    // Get the requested path minus the base path.
+    $path = $request->getPathInfo();
+
+    if (!$this->checkPathReferral($path)) {
+      $referral_item = $this->getCurrentReferralItem();
+      $path = rtrim($path, '/') . '/refid' . $referral_item->uid . '-' . $referral_item->type;
+      $qs = $request->getQueryString();
+      if ($qs) {
+        $qs = '?' . $qs;
+      }
+      $response = new LocalRedirectResponse($request->getUriForPath($path) . $qs);
+      $response->getCacheableMetadata()->setCacheMaxAge(0);
+      \Drupal::service('page_cache_kill_switch')->trigger();
+      $event->setResponse($response);
+    }
   }
 
   /**
@@ -382,7 +468,18 @@ class ReferralManager implements InboundPathProcessorInterface, OutboundPathProc
   static function getSubscribedEvents() {
     $events[KernelEvents::RESPONSE][] = ['onKernelResponse'];
     $events[UserReferralCookieEvent::COOKIE_SET][] = ['onReferralCookieBeingSet'];
+    $events[KernelEvents::REQUEST][] = ['onKernelRequestRedirect', 100];
     return $events;
+  }
+
+  public function setPathReferralCookie($referral_item) {
+    $existing_cookie = isset($_COOKIE[self::COOKIE_NAME]) ? json_decode($_COOKIE[self::COOKIE_NAME]) : NULL;
+    if (!$existing_cookie || $existing_cookie->uid != $referral_item->uid || $existing_cookie->type != $referral_item->type) {
+      $cookie = new \stdClass();
+      $cookie->uid = $referral_item->uid;
+      $cookie->type = $referral_item->type;
+      setcookie(self::COOKIE_NAME, json_encode($cookie), time() + 7 * 24 * 60 * 60, '/');
+    }
   }
 
 }
