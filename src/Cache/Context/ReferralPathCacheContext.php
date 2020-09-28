@@ -50,7 +50,7 @@ class ReferralPathCacheContext implements CacheContextInterface {
     if ($referral_type) {
       $account = $referral_type->getReferralIDAccount($referral_item->refid);
       if ($account) {
-        return $account->id();
+        return $referral_item->type . ':' . $referral_item->refid;
       }
     }
     
@@ -64,10 +64,13 @@ class ReferralPathCacheContext implements CacheContextInterface {
 
     $referral_item = $this->referralManager->getCurrentReferralItem();
     $referral_type = UserReferralType::load($referral_item->type);
+    $tags = [];
     if ($referral_type) {
+      $tags[] = 'reftype:' . $referral_item->type;
       $account = $referral_type->getReferralIDAccount($referral_item->refid);
       if ($account) {
         $tags = ['referrer:' . $referral_item->uid];
+        $tags = ['refid:' . $referral_item->refid];
         $cacheable_metadata->setCacheTags($tags);
       }
     }
