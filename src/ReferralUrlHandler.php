@@ -41,16 +41,20 @@ class ReferralUrlHandler implements InboundPathProcessorInterface {
   }
 
   public static function setPathReferralCookie($referral_item) {
-    $existing_cookie = isset($_COOKIE[self::COOKIE_NAME]) ? json_decode($_COOKIE[self::COOKIE_NAME]) : NULL;
-    $referral_type = UserReferralType::load($referral_item->type);
-    if ($referral_type) {
-      $account = $referral_type->getReferralIDAccount($referral_item->refid);
-      if ($account) {
-        if (!$existing_cookie || $existing_cookie->uid != $account->id() || $existing_cookie->type != $referral_item->type) {
-          $cookie = new \stdClass();
-          $cookie->uid = $account->id();
-          $cookie->type = $referral_item->type;
-          setcookie(self::COOKIE_NAME, json_encode($cookie), time() + 7 * 24 * 60 * 60, '/');
+    static $set_cookie = FALSE;
+    if (!$set_cookie) {
+      $existing_cookie = isset($_COOKIE[self::COOKIE_NAME]) ? json_decode($_COOKIE[self::COOKIE_NAME]) : NULL;
+      $referral_type = UserReferralType::load($referral_item->type);
+      if ($referral_type) {
+        $account = $referral_type->getReferralIDAccount($referral_item->refid);
+        if ($account) {
+          if (!$existing_cookie) {
+            $cookie = new \stdClass();
+            $cookie->uid = $account->id();
+            $cookie->type = $referral_item->type;
+            setcookie(self::COOKIE_NAME, json_encode($cookie), time() + 7 * 24 * 60 * 60, '/');
+            $set_cookie = TRUE;
+          }
         }
       }
     }
