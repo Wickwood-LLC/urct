@@ -510,6 +510,7 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
       if ($qs) {
         $qs = '?' . $qs;
       }
+      ReferralUrlHandler::setPathReferralCookie($referral_item);
       $response = new LocalRedirectResponse($request->getUriForPath($path) . $qs);
       $response->getCacheableMetadata()->setCacheMaxAge(0);
       $this->killSwitch->trigger();
