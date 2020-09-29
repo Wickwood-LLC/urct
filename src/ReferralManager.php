@@ -86,6 +86,10 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     // $this->isAdminPage = \Drupal::service('router.admin_context')->isAdminRoute();
   }
 
+  public function setCurrentReferralItem($referral_item) {
+    $this->referralItem = $referral_item;
+  }
+
 
   public function getCurrentReferralItem() {
     if (!isset($this->referralItem)) {
@@ -426,7 +430,12 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
   }
 
   public function appendPathReferralToPath($path, $referral_item) {
-    return rtrim($path, '/') . '/' . $referral_item->refid . '-refid-' . $referral_item->type;
+    if (isset($referral_item->refid_only) && $referral_item->refid_only) {
+      return rtrim($path, '/') . '/' . $referral_item->refid;
+    }
+    else {
+      return rtrim($path, '/') . '/' . $referral_item->refid . '/' . $referral_item->type;
+    }
   }
 
   // /**
@@ -464,7 +473,7 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     $response = $event->getResponse();
     if ($response instanceof RedirectResponse && !\Drupal::service('router.admin_context')->isAdminRoute()) {
       $target_url = $response->getTargetUrl();
-      if ($this->referralItem && !$this->checkPathReferral($target_url)) {
+      if ($this->referralItem && !ReferralUrlHandler::getReferralFromPath($target_url )) {
         $target_url = $this->appendPathReferralToPath($target_url, $this->referralItem);
         $response->setTargetUrl($target_url);
       }
@@ -502,7 +511,7 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     $path = $request->getPathInfo();
 
     $url_handler = \Drupal::service('urct.referral_url_handler');
-    if (!$this->checkPathReferral($path) && !$this->isCrawler()) {
+    if (!ReferralUrlHandler::getReferralFromPath($path) && !$this->isCrawler()) {
       // Get a fallback referrer.
       $referral_item = $this->getCurrentReferralItem();
       $path = $this->appendPathReferralToPath($path, $referral_item);
