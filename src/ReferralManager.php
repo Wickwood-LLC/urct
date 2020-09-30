@@ -93,91 +93,112 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
 
   public function getCurrentReferralItem() {
     if (!isset($this->referralItem)) {
-      $config = $this->configFactory->getEditable('urct.settings');
-      if ($config->get('debug')) {
-        $this->killSwitch->trigger();
-      }
       $referral_item = NULL;
-      if (isset($_COOKIE[UserReferralType::COOKIE_NAME])) {
-        // Retrieve referral info from the cookie set by referral link
-        $cookie = json_decode($_COOKIE[UserReferralType::COOKIE_NAME]);
-        if (!empty($cookie) && isset($cookie->uid)) {
-          $referral_item = new \stdClass();
-          $referral_item->uid = $cookie->uid;
-          $referral_item->type = $cookie->type;
-        }
-      }
-      else if (isset($_COOKIE[ReferralUrlHandler::COOKIE_NAME])) {
-        // Retrieve referral info from the cookie set by referral path item
-        $cookie = json_decode($_COOKIE[ReferralUrlHandler::COOKIE_NAME]);
-        if (!empty($cookie) && isset($cookie->uid)) {
-          $referral_item = new \stdClass();
-          $referral_item->uid = $cookie->uid;
-          $referral_item->type = $cookie->type;
-        }
-      }
-      if (empty($referral_item)) {
-        if ($this->isCrawler()) {
-          $default_fallback_referrer_id = $config->get('default_fallback_referrer');
-          if (!empty($default_fallback_referrer_id)) {
+      if ($this->currentUser->isAuthenticated()) {
+        $referral_types = UserReferralType::loadMultiple();
+        $referral_type = reset($referral_types);
+        if ($referral_type) {
+          $account = User::load($this->currentUser->id());
+          $referral_id = $referral_type->getAccountReferralID($account);
+          if ($referral_id) {
             $referral_item = new \stdClass();
-            $referral_item->uid = $default_fallback_referrer_id;
-            $referral_item->type = $config->get('default_fallback_referrer_referral_type');
+            $referral_item->refid = $referral_id;
+            $referral_item->uid = $this->currentUser->id();
+            $referral_item->type = $referral_type->id();
           }
         }
       }
-      if (empty($referral_item)) {
-        // No referrer found from cookie. Fallback configured type.
-
-        $fallback_type = $config->get('fallback_type');
-        if (!empty($fallback_type)) {
-          $last_selected = new \stdClass();
-          $last_selected->uid = $config->get('last_selected_uid') ?? 0;
-          $last_selected->type = $config->get('last_selected_referral_type') ?? NULL;
-
-          // if ($fallback_type == 'roles') {
-          //   $roles_condition = $config->get('roles_condition');
-          //   if ($roles_condition == 'and') {
-          //     $uid = $this->getUserHavingAllRoles($last_selected_uid);
-          //   }
-          //   else {
-          //     $uid = $this->getUserHavingAnyRoles($last_selected_uid);
-          //   }
-          // }
-          if ($fallback_type == 'referral_types') {
-            $referral_item = $this->getUserFromReferralTypes($last_selected);
-          }
-          // else if ($fallback_type == 'view') {
-          //   $uid = $this->getUserFromView($last_selected_uid);
-          // }
+      else {
+        $cookie_exists = FALSE;
+        $config = $this->configFactory->getEditable('urct.settings');
+        if ($config->get('debug')) {
+          $this->killSwitch->trigger();
         }
-        if (!empty($referral_item->uid) && $config->get('roll_up') == 'enroller') {
-          $referrer_account = User::load($next_item->uid);
-          do {
-            if ($referrer_account && $referrer_account->isActive()) {
-              $referral_item->uid = $referrer_account->id();
-              break;
-            }
-            else if ($referrer_account) {
-              // Referrer account exists but not active.
-              // Then find enroller of this account.
-              $referrer_account = UserReferral::getReferrer($referrer_account);
-            }
-            else {
-              break;
-            }
-          } while($referrer_account);
-        }
-        if (empty($referral_item->uid)) {
-          $default_fallback_referrer_id = $config->get('default_fallback_referrer');
-          if (!empty($default_fallback_referrer_id)) {
+        if (isset($_COOKIE[UserReferralType::COOKIE_NAME])) {
+          // Retrieve referral info from the cookie set by referral link
+          $cookie = json_decode($_COOKIE[UserReferralType::COOKIE_NAME]);
+          if (!empty($cookie) && isset($cookie->uid)) {
             $referral_item = new \stdClass();
-            $referral_item->uid = $default_fallback_referrer_id;
-            $referral_item->type = $config->get('default_fallback_referrer_referral_type');
+            $referral_item->uid = $cookie->uid;
+            $referral_item->type = $cookie->type;
+            $cookie_exists = TRUE;
           }
         }
+        else if (isset($_COOKIE[ReferralUrlHandler::COOKIE_NAME])) {
+          // Retrieve referral info from the cookie set by referral path item
+          $cookie = json_decode($_COOKIE[ReferralUrlHandler::COOKIE_NAME]);
+          if (!empty($cookie) && isset($cookie->uid)) {
+            $referral_item = new \stdClass();
+            $referral_item->uid = $cookie->uid;
+            $referral_item->type = $cookie->type;
+            $cookie_exists = TRUE;
+          }
+        }
+        if (empty($referral_item)) {
+          if ($this->isCrawler()) {
+            $default_fallback_referrer_id = $config->get('default_fallback_referrer');
+            if (!empty($default_fallback_referrer_id)) {
+              $referral_item = new \stdClass();
+              $referral_item->uid = $default_fallback_referrer_id;
+              $referral_item->type = $config->get('default_fallback_referrer_referral_type');
+            }
+          }
+        }
+        if (empty($referral_item)) {
+          // No referrer found from cookie. Fallback configured type.
 
-        ReferralUrlHandler::setPathReferralCookie($referral_item);
+          $fallback_type = $config->get('fallback_type');
+          if (!empty($fallback_type)) {
+            $last_selected = new \stdClass();
+            $last_selected->uid = $config->get('last_selected_uid') ?? 0;
+            $last_selected->type = $config->get('last_selected_referral_type') ?? NULL;
+
+            // if ($fallback_type == 'roles') {
+            //   $roles_condition = $config->get('roles_condition');
+            //   if ($roles_condition == 'and') {
+            //     $uid = $this->getUserHavingAllRoles($last_selected_uid);
+            //   }
+            //   else {
+            //     $uid = $this->getUserHavingAnyRoles($last_selected_uid);
+            //   }
+            // }
+            if ($fallback_type == 'referral_types') {
+              $referral_item = $this->getUserFromReferralTypes($last_selected);
+            }
+            // else if ($fallback_type == 'view') {
+            //   $uid = $this->getUserFromView($last_selected_uid);
+            // }
+          }
+          if (!empty($referral_item->uid) && $config->get('roll_up') == 'enroller') {
+            $referrer_account = User::load($next_item->uid);
+            do {
+              if ($referrer_account && $referrer_account->isActive()) {
+                $referral_item->uid = $referrer_account->id();
+                break;
+              }
+              else if ($referrer_account) {
+                // Referrer account exists but not active.
+                // Then find enroller of this account.
+                $referrer_account = UserReferral::getReferrer($referrer_account);
+              }
+              else {
+                break;
+              }
+            } while($referrer_account);
+          }
+          if (!$cookie_exists) {
+            ReferralUrlHandler::setPathReferralCookie($referral_item);
+          }
+        }
+      }
+
+      if (empty($referral_item->uid)) {
+        $default_fallback_referrer_id = $config->get('default_fallback_referrer');
+        if (!empty($default_fallback_referrer_id)) {
+          $referral_item = new \stdClass();
+          $referral_item->uid = $default_fallback_referrer_id;
+          $referral_item->type = $config->get('default_fallback_referrer_referral_type');
+        }
       }
       if ($referral_item) {
         $referral_type = UserReferralType::load($referral_item->type);
@@ -471,7 +492,7 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
 
   public function onKernelResponse(FilterResponseEvent $event) {
     $response = $event->getResponse();
-    if ($response instanceof RedirectResponse && !\Drupal::service('router.admin_context')->isAdminRoute()) {
+    if (\Drupal::currentUser()->isAnonymous() && $response instanceof RedirectResponse && !\Drupal::service('router.admin_context')->isAdminRoute()) {
       $target_url = $response->getTargetUrl();
       if ($this->referralItem && !ReferralUrlHandler::getReferralFromPath($target_url )) {
         $target_url = $this->appendPathReferralToPath($target_url, $this->referralItem);
@@ -502,8 +523,8 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
    *   The Event to process.
    */
   public function onKernelRequestRedirect(GetResponseEvent $event) {
-    if (\Drupal::service('router.admin_context')->isAdminRoute()) {
-      // Skip on admin pages.
+    if (\Drupal::currentUser()->isAuthenticated()) {
+      // Skip for logged in users.
       return;
     }
     $request = $event->getRequest();
