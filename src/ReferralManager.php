@@ -241,30 +241,6 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     return $this->crawler;
   }
 
-
-  // protected function getUserHavingAnyRoles($last_selected_uid) {
-  //   static $times = 0;
-  //   $selected_uid = NULL;
-  //   $config = $this->configFactory->getEditable('urct.settings');
-  //   $roles = array_values(array_filter($config->get('roles')));
-
-  //   $query = \Drupal::entityQuery('user')
-  //     ->condition('status', 1)
-  //     ->condition('uid', $last_selected_uid, '>');
-  //     $query->condition('roles', $roles, 'IN');
-  //   $ids = $query->range(0, 1)->execute();
-  //   if (empty($ids) && $times == 0) {
-  //     $times++;
-  //     $selected_uid = $this->getUserHavingAnyRoles(0);
-  //   }
-  //   else {
-  //     $selected_uid = reset($ids);
-  //     $config->set('last_selected_uid', $selected_uid);
-  //     $config->save();
-  //   }
-  //   return $selected_uid;
-  // }
-
   public function getUserFromReferralTypes($last_selected) {
     $config = $this->configFactory->getEditable('urct.settings');
     $referral_types = $config->get('referral_types');
@@ -351,92 +327,6 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     return $next_item;
   }
 
-  // protected function getUserHavingAllRoles($last_selected_uid) {
-  //   static $times = 0;
-  //   $selected_uid = NULL;
-  //   $config = $this->configFactory->getEditable('urct.settings');
-  //   $roles = array_values(array_filter($config->get('roles')));
-
-  //   $database = \Drupal::database();
-  //   $query = $database->select('users_field_data', 'u');
-  //   foreach ($roles as $index => $role) {
-  //     $alias = 'ur_' . $index;
-  //     $query->join('user__roles', $alias, "u.uid = $alias.entity_id AND $alias.deleted = 0 AND $alias.roles_target_id = '$role'");
-  //   }
-
-  //   $query->fields('u', array('uid'));
-  //   $query->condition('uid', $last_selected_uid, '>');
-
-  //   $id = $query->range(0, 1)->execute()->fetchField();
-  //   if (empty($id) && $times == 0) {
-  //     $times++;
-  //     $selected_uid = $this->getUserHavingAllRoles(0);
-  //   }
-  //   else {
-  //     $selected_uid = $id;
-  //     $config->set('last_selected_uid', $selected_uid);
-  //     $config->save();
-  //   }
-  //   return $selected_uid;
-  // }
-
-  // protected function getUserFromView($last_selected_uid) {
-  //   static $times = 0;
-  //   $selected_uid = NULL;
-  //   $config = $this->configFactory->getEditable('urct.settings');
-  //   $view_name = 'urct_referral_fallbacks';
-
-  //   $view = Views::getView($view_name);
-
-  //   // Set which view display we want.
-  //   $view->setDisplay('default');
-  //   // To initialize the query.
-  //   $view->build();
-  //   // Get underlaying SQL select query.
-  //   // We will execute the select query directly without executing the whole view.
-  //   // Executing the whole view will cause to load the user objects will increase the memory usage, which we want never to happen here.
-  //   $query = $view->getQuery()->query();
-  //   $fields = &$query->getFields();
-  //   // Ensure uid is always as first column, so we can take it easily from the result.
-  //   unset($fields['uid']);
-  //   $fields = [
-  //     'uid' => [
-  //       'field' => 'uid',
-  //       'table' => 'users_field_data',
-  //       'alias' => 'uid',
-  //     ],
-  //   ] + $fields;
-
-  //   $results = $query->execute()->fetchCol();
-
-  //   if (!empty($results)) {
-  //     if (!empty($last_selected_uid)) {
-  //       $index_of_last_selected_uid = array_search($last_selected_uid, $results);
-  //       if ($index_of_last_selected_uid === FALSE || $index_of_last_selected_uid == (count($results) - 1)) {
-  //         // Could not find or last selected item is las position in result.
-  //         // Select the first item from the result.
-  //         $selected_uid = reset($results);
-  //       }
-  //       else {
-  //         $selected_uid = $results[$index_of_last_selected_uid + 1];
-  //       }
-  //     }
-  //     else {
-  //       // No information about last selected uid.
-  //       // Start with first item in the result.
-  //       $selected_uid = reset($results);
-  //     }
-  //   }
-  //   else {
-  //     $selected_uid = NULL;
-  //   }
-
-  //   $config->set('last_selected_uid', $selected_uid);
-  //   $config->save();
-
-  //   return $selected_uid;
-  // }
-
   public function checkPathReferral($path) {
     if (preg_match('~/([a-zA-Z]+)-refid-(\w+)$~', $path, $matches)) {
       $parts = array_filter(explode('/', $path));
@@ -458,25 +348,6 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
       return rtrim($path, '/') . '/' . $referral_item->refid . '/' . $referral_item->type;
     }
   }
-
-  // /**
-  //  * {@inheritdoc}
-  //  */
-  // public function processInbound($path, Request $request) {
-  //   if ($referral_item = $this->checkPathReferral($path)) {
-  //     $request->attributes->add(['_disable_route_normalizer' => TRUE]);
-  //     $this->referralItemInPath = $referral_item;
-  //     $this->setPathReferralCookie($this->referralItemInPath);
-  //     if (!$this->referralItem) {
-  //       $this->referralItem = $this->referralItemInPath;
-  //     }
-
-  //     $parts = array_filter(explode('/', $path));
-  //     array_pop($parts);
-  //     $path = '/' . implode('/', $parts);
-  //   }
-  //   return $path;
-  // }
 
   /**
    * {@inheritdoc}
@@ -558,21 +429,5 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     $events[KernelEvents::REQUEST][] = ['onKernelRequestRedirect', 30];
     return $events;
   }
-
-  // public function setPathReferralCookie($referral_item) {
-  //   $existing_cookie = isset($_COOKIE[self::COOKIE_NAME]) ? json_decode($_COOKIE[self::COOKIE_NAME]) : NULL;
-  //   $referral_type = UserReferralType::load($referral_item->type);
-  //   if ($referral_type) {
-  //     $account = $referral_type->getReferralIDAccount($referral_item->refid);
-  //     if ($account) {
-  //       if (!$existing_cookie || $existing_cookie->uid != $account->id() || $existing_cookie->type != $referral_item->type) {
-  //         $cookie = new \stdClass();
-  //         $cookie->uid = $account->id();
-  //         $cookie->type = $referral_item->type;
-  //         setcookie(self::COOKIE_NAME, json_encode($cookie), time() + 7 * 24 * 60 * 60, '/');
-  //       }
-  //     }
-  //   }
-  // }
 
 }
