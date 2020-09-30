@@ -251,9 +251,11 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     $queries = [];
     foreach ($referral_types as $referral_type_id) {
       $referral_type = UserReferralType::load($referral_type_id);
+      $referral_id_field_name = $referral_type->getReferralField();
       $roles = $referral_type->getRoles();
       $query = $connection->select('users', 'u');
       $query->join('user__roles', 'ur', "u.uid = ur.entity_id AND ur.deleted = 0 AND ur.bundle = 'user'");
+      $query->join('user__' . $referral_id_field_name, 'rf', "u.uid = rf.entity_id AND rf.deleted = 0 AND rf.bundle = 'user' AND rf." . $referral_id_field_name . '_value IS NOT NULL');
       $query->condition('ur.roles_target_id', $roles, 'IN');
       $query->addField('u', 'uid');
       $query->addExpression("'$referral_type_id'", 'type');
@@ -416,7 +418,6 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
       $response->getCacheableMetadata()->setCacheMaxAge(0);
       $this->killSwitch->trigger();
       $event->setResponse($response);
-      // $url_handler->setProcessed(TRUE);
     }
   }
 
