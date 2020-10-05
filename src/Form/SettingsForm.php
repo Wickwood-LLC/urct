@@ -112,8 +112,8 @@ class SettingsForm extends ConfigFormBase {
       '#title' => $this->t('Fallback method'),
       '#options' => $fallback_type_options,
       '#default_value' => $config->get('fallback_type'),
-      '#description' => $this->t('Select a fallback method you like to set the referrer when referral cookie does not exist, which happens when a user vists the site directly or through search engines. 
-      For Roles and View fallback options, a different user account is displayed each time the site is visited directly, rotating selected users by incrementing the user ID or as filtered and sorted with the <a href=":url">@name</a> View.', [':url' => Url::fromRoute('entity.view.edit_display_form', ['view' => 'urct_referral_fallbacks', 'display_id' => 'default'])->toString(), '@name' => 'Referral Fallbacks']),
+      '#description' => $this->t('Select a fallback method to use when a referral cookie does not exist, which happens when a user visits the site directly or discovers the site through search engines.
+            When this happens, a different user account is displayed each time the site is visited directly, rotating through selected users by incrementing the user ID based on Roles allowed for Referral Types selected below and with optional filtering and sorting with the <a href=":url">@name</a> View.', [':url' => Url::fromRoute('entity.view.edit_display_form', ['view' => 'urct_referral_fallbacks', 'display_id' => 'default'])->toString(), '@name' => 'Referral Fallbacks']),
       '#required' => TRUE,
     ];
 
