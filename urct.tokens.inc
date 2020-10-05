@@ -74,10 +74,8 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
         case 'url-non-referral':
           $url = $node->toUrl('canonical', $url_options)->toString();
           $url_parts = parse_url($url);
-          if (preg_match('~refid(\d+)$~', $url_parts['path'], $matches)) {
-            $parts = array_filter(explode('/', $url_parts['path']));
-            array_pop($parts);
-            $url_parts['path'] = '/' . implode('/', $parts);
+          if ($result = \Drupal::service('urct.referral_url_handler')->getReferralFromPath($url_parts['path'])) {
+            $url_parts['path'] = $result->normal_path;
             $url = unparse_url($url_parts);
           }
           $replacements[$original] = $url;
@@ -96,13 +94,11 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
 
           $url_string = $url->toString();
           $url_parts = parse_url($url_string);
-          if (preg_match('~refid(\d+)$~', $url_parts['path'], $matches)) {
-            $parts = array_filter(explode('/', $url_parts['path']));
-            array_pop($parts);
-            $url_parts['path'] = '/' . implode('/', $parts);
-            $url_string = unparse_url($url_parts);
+          if ($result = \Drupal::service('urct.referral_url_handler')->getReferralFromPath($url_parts['path'])) {
+            $url_parts['path'] = $result->normal_path;
+            $url = unparse_url($url_parts);
           }
-          $replacements[$original] = $url_string;
+          $replacements[$original] = $url;
           break;
       }
     }
@@ -116,10 +112,8 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
           $bubbleable_metadata->addCacheableDependency($result);
           $url = $result->getGeneratedUrl();
           $url_parts = parse_url($url);
-          if (preg_match('~refid(\d+)$~', $url_parts['path'], $matches)) {
-            $parts = array_filter(explode('/', $url_parts['path']));
-            array_pop($parts);
-            $url_parts['path'] = '/' . implode('/', $parts);
+          if ($result = \Drupal::service('urct.referral_url_handler')->getReferralFromPath($url_parts['path'])) {
+            $url_parts['path'] = $result->normal_path;
             $url = unparse_url($url_parts);
           }
           $replacements[$original] = $url;
