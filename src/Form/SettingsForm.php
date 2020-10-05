@@ -95,7 +95,7 @@ class SettingsForm extends ConfigFormBase {
       '#required' => TRUE,
     ];
 
-    if (count($default_referrer_referral_type_options) == 1) {
+    if (count($default_referrer_referral_type_options) < 2) {
       $form['default_fallback']['default_fallback_referrer_referral_type']['#value'] = reset(array_keys($default_referrer_referral_type_options));
       $form['default_fallback']['default_fallback_referrer_referral_type']['#access']  = FALSE;
     }
