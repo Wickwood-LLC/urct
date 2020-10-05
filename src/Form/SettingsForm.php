@@ -158,6 +158,8 @@ class SettingsForm extends ConfigFormBase {
           ':input[name="fallback_type"]' => ['value' => 'referral_types'],
         ],
       ],
+      '#prefix' => '<div class="indent-1">',
+      '#suffix' => '</div>',
     ];
 
     $form['referral_types_filter_by_view'] = [
@@ -170,7 +172,7 @@ class SettingsForm extends ConfigFormBase {
           ':input[name="fallback_type"]' => ['value' => 'referral_types'],
         ],
       ],
-      '#prefix' => '<div class="indent-1">',
+      '#prefix' => '<div class="indent-2">',
       '#suffix' => '</div>',
     ];
 
@@ -185,7 +187,7 @@ class SettingsForm extends ConfigFormBase {
           ':input[name="referral_types_filter_by_view"]' => ['checked' => TRUE],
         ],
       ],
-      '#prefix' => '<div class="indent-2">',
+      '#prefix' => '<div class="indent-3">',
       '#suffix' => '</div>',
     ];
 
