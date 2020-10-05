@@ -54,6 +54,7 @@ class SettingsForm extends ConfigFormBase {
 
     $form['default_fallback']['default_fallback_referrer'] = [
       '#type' => 'entity_autocomplete',
+      '#selection_handler' => 'urct:referrer_user_selection',
       '#target_type' => 'user',
       '#title' => $this->t('Default referrer user'),
       '#default_value' => $default_fallback_referrer,
