@@ -93,6 +93,8 @@ class SettingsForm extends ConfigFormBase {
         'class' => ['indent-1'],
       ],
       '#required' => TRUE,
+      '#prefix' => '<div class="indent-1">',
+      '#suffix' => '</div>',
     ];
 
     if (count($default_referrer_referral_type_options) < 2) {
