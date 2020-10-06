@@ -96,9 +96,9 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
           $url_parts = parse_url($url_string);
           if ($result = \Drupal::service('urct.referral_url_handler')->getReferralFromPath($url_parts['path'])) {
             $url_parts['path'] = $result->normal_path;
-            $url = unparse_url($url_parts);
+            $url_string = unparse_url($url_parts);
           }
-          $replacements[$original] = $url;
+          $replacements[$original] = $url_string;
           break;
       }
     }
