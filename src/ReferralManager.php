@@ -404,6 +404,10 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     // Get the requested path minus the base path.
     $path = $request->getPathInfo();
 
+    if (strpos($path, '/user/') === 0) {
+      return;
+    }
+
     $url_handler = \Drupal::service('urct.referral_url_handler');
     if (!ReferralUrlHandler::getReferralFromPath($path) && !$this->isCrawler()) {
       // Get a fallback referrer.
