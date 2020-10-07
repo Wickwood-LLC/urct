@@ -42,3 +42,71 @@ function urct_requirements($phase) {
   }
   return $requirements;
 }
+
+/**
+ * Implements hook_install()
+ */
+function urct_install() {
+  $database = \Drupal::database();
+  $schema = $database->schema();
+  $field_name = 'auto_referrer';
+  $table_name = 'user_referral';
+  if ($schema->tableExists($table_name) && !$schema->fieldExists($table_name, $field_name)) {
+
+    $spec = [
+      'description' => 'Boolean indicating whether this record represents referral happened with auto assinged referrer.',
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0,
+      'size' => 'tiny',
+    ];
+
+    $schema->addField($table_name, $field_name, $spec);
+  }
+  else {
+    return t('The db table {@table} does not exist or field @field already exits.', ['@table' => 'user_referral', '@field' => $field_name]);
+  }
+}
+
+/**
+ * Add auto_referrer field to user_referral table.
+ */
+function urct_update_8001(&$sandbox = NULL) {
+  $database = \Drupal::database();
+  $schema = $database->schema();
+  $field_name = 'auto_referrer';
+  $table_name = 'user_referral';
+  if ($schema->tableExists($table_name) && !$schema->fieldExists($table_name, $field_name)) {
+
+    $spec = [
+      'description' => 'Boolean indicating whether this record represents referral happened with auto assinged referrer.',
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0,
+      'size' => 'tiny',
+    ];
+
+    $schema->addField($table_name, $field_name, $spec);
+  }
+  else {
+    return t('The db table {@table} does not exist or field @field already exits.', ['@table' => 'user_referral', '@field' => $field_name]);
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function urct_uninstall() {
+  $database = \Drupal::database();
+  $schema = $database->schema();
+  $field_name = 'auto_referrer';
+  $table_name = 'user_referral';
+  if ($schema->tableExists($table_name) && $schema->fieldExists($table_name, $field_name)) {
+    $schema->dropField($table_name, $field_name);
+  }
+  else {
+    return t('The db table {@table} does not exist or field @field not exits.', ['@table' => 'user_referral', '@field' => $field_name]);
+  }
+}
