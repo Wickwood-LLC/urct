@@ -243,7 +243,7 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
 
   public function getUserFromReferralTypes($last_selected) {
     $config = $this->configFactory->getEditable('urct.settings');
-    $referral_types = $config->get('referral_types');
+    $referral_types = array_filter($config->get('referral_types'));
 
     $query = \Drupal::entityQuery('node');
     $connection = \Drupal::service('database');
