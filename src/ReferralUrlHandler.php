@@ -67,9 +67,12 @@ class ReferralUrlHandler implements InboundPathProcessorInterface {
    * {@inheritdoc}
    */
   public function processInbound($path, Request $request) {
-    if (strpos($path, '/user/') === 0) {
+    if (\Drupal::service('urct.path_validator')->getUrlIfValidWithoutAccessCheck($path)) {
       return $path;
     }
+    // if (strpos($path, '/user/') === 0) {
+    //   return $path;
+    // }
     $result = static::getReferralFromPath($path);
     if ($result) {
       $path = $result->normal_path;
