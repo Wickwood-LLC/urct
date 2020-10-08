@@ -62,6 +62,7 @@ function urct_tokens($type, $tokens, array $data, array $options, BubbleableMeta
       $account = $referral_type->getReferralIDAccount($referral_item->refid);
       $bubbleable_metadata->addCacheContexts(['user_referral']);
       // $bubbleable_metadata->addCacheableDependency($account);
+      $bubbleable_metadata->setCacheTags($referral_type->getCacheTags());
       $replacements += $token_service->generate('user', $tokens, ['user' => $account], $options, $bubbleable_metadata);
     }
   }
