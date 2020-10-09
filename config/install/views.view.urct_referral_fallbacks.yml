@@ -147,8 +147,6 @@ display:
       empty: {  }
       relationships: {  }
       arguments: {  }
-      display_extenders:
-        metatag_display_extender: {  }
       title: 'This view is used by the User Referral Cookie Tokens module internally'
     cache_metadata:
       max-age: -1

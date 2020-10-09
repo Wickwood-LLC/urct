@@ -16,4 +16,4 @@ bot_agents: |
   SEOkicks
   facebook
   bot
-debug: 0
+debug: false
