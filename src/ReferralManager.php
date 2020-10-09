@@ -186,7 +186,7 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
               }
             } while($referrer_account);
           }
-          if (!$cookie_exists) {
+          if (!$cookie_exists && $referral_item) {
             ReferralUrlHandler::setPathReferralCookie($referral_item);
           }
         }
@@ -409,9 +409,7 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     // }
 
     $url_handler = \Drupal::service('urct.referral_url_handler');
-    if (!ReferralUrlHandler::getReferralFromPath($path) && !$this->isCrawler()) {
-      // Get a fallback referrer.
-      $referral_item = $this->getCurrentReferralItem();
+    if (!ReferralUrlHandler::getReferralFromPath($path) && !$this->isCrawler() && $referral_item = $this->getCurrentReferralItem()) {
       $path = $this->appendPathReferralToPath($path, $referral_item);
       $qs = $request->getQueryString();
       if ($qs) {
