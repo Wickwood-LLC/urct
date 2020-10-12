@@ -42,6 +42,7 @@ class SettingsForm extends ConfigFormBase {
       $default_fallback_referrer_id = $config->get('default_fallback_referrer');
     }
 
+    $default_fallback_referrer = NULL;
     if (!empty($default_fallback_referrer_id)) {
       $default_fallback_referrer = User::load($default_fallback_referrer_id);
     }
@@ -98,7 +99,8 @@ class SettingsForm extends ConfigFormBase {
     ];
 
     if (count($default_referrer_referral_type_options) < 2) {
-      $form['default_fallback']['default_fallback_referrer_referral_type']['#value'] = reset(array_keys($default_referrer_referral_type_options));
+      $default_referrer_referral_type_options_keys = array_keys($default_referrer_referral_type_options);
+      $form['default_fallback']['default_fallback_referrer_referral_type']['#value'] = reset($default_referrer_referral_type_options_keys);
       $form['default_fallback']['default_fallback_referrer_referral_type']['#access']  = FALSE;
     }
 
@@ -282,6 +284,7 @@ class SettingsForm extends ConfigFormBase {
     $config->save();
 
     parent::submitForm($form, $form_state);
+    drupal_flush_all_caches();
   }
 
   public function refreshReferralTypeField(array &$form, FormStateInterface $form_state) {
