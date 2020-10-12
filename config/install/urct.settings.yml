@@ -1,3 +1,4 @@
+fallback_type: 'default_fallback_referrer'
 bot_agents: |
   GoogleImageProxy
   Googlebot
