@@ -18,10 +18,13 @@ urct.settings:
     #   label: Roles to which to be used to select the user for falling back.
     # roles_condition:
     #   type: sequence
-      label: How to consider the roles for matching. Whether user has to have any or all of selected roles.
+    #   label: How to consider the roles for matching. Whether user has to have any or all of selected roles.
     referral_types:
       type: sequence
       label: One or more referral types to limit.
+      sequence:
+        type: string
+        label: 'User Referral Type'
     referral_types_filter_by_view:
       type: boolean
       label: Filter by view result
