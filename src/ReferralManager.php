@@ -170,7 +170,7 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
             // }
           }
           if (!empty($referral_item->uid) && $config->get('roll_up') == 'enroller') {
-            $referrer_account = User::load($next_item->uid);
+            $referrer_account = User::load($referral_item->uid);
             do {
               if ($referrer_account && $referrer_account->isActive()) {
                 $referral_item->uid = $referrer_account->id();
@@ -186,9 +186,6 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
               }
             } while($referrer_account);
           }
-          if (!$cookie_exists && $referral_item) {
-            ReferralUrlHandler::setPathReferralCookie($referral_item);
-          }
         }
       }
 
@@ -203,8 +200,12 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
       if ($referral_item) {
         $referral_type = UserReferralType::load($referral_item->type);
         $account = User::load($referral_item->uid);
-        if ($referral_type && $account) {
+        if ($referral_type && $account && empty($referral_item->refid)) {
           $referral_item->refid = $referral_type->getAccountReferralID($account);
+        }
+
+        if (!$cookie_exists) {
+          ReferralUrlHandler::setPathReferralCookie($referral_item);
         }
       }
       $this->referralItem = $referral_item;
@@ -245,7 +246,7 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     $config = $this->configFactory->getEditable('urct.settings');
     $referral_types = array_filter($config->get('referral_types'));
 
-    $query = \Drupal::entityQuery('node');
+    // $query = \Drupal::entityQuery('node');
     $connection = \Drupal::service('database');
     $count = 0;
     $queries = [];
