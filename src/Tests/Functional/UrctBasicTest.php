@@ -71,6 +71,9 @@ class UrctBasicTest extends BrowserTestBase {
     $this->admin_user = $this->drupalCreateUser($permissions);
   }
 
+  /**
+   * Test configuration form.
+   */
   public function testConfigurationForm() {
     // Login as admin
     $this->drupalLogin($this->admin_user);
@@ -96,6 +99,9 @@ class UrctBasicTest extends BrowserTestBase {
     $this->assertSession()->buttonExists('Save configuration');
   }
 
+  /**
+   * Test setting default fallback user.
+   */
   public function testDefaultFallBackUser() {
     // Login as admin
     $this->drupalLogin($this->admin_user);
@@ -141,6 +147,9 @@ class UrctBasicTest extends BrowserTestBase {
     $this->assertEqual($referral_cookie->type, $this->referral_partner_referral_type->id());
   }
 
+  /**
+   * Test fallback rotation.
+   */
   public function testFallbackRotation() {
     // Login as admin
     $this->drupalLogin($this->admin_user);
@@ -189,6 +198,5 @@ class UrctBasicTest extends BrowserTestBase {
     $this->assertEqual($first_referrer_uid, $third_referrer_uid, t('Referrer rotation completes'));
 
   }
-
 
 }
