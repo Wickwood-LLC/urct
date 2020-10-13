@@ -79,7 +79,7 @@ class ReferralUrlHandler implements InboundPathProcessorInterface {
       $this->referralItem = $result;
 
       $request->attributes->add(['_disable_route_normalizer' => TRUE]);
-      $this->setPathReferralCookie($this->referralItem);
+      $this->setPathReferralCookie($this->referralItem, TRUE);
       \Drupal::service('urct.referral_manager')->setCurrentReferralItem($result);
 
       $this->processed = TRUE;
@@ -87,7 +87,7 @@ class ReferralUrlHandler implements InboundPathProcessorInterface {
     return $path;
   }
 
-  public static function setPathReferralCookie($referral_item) {
+  public static function setPathReferralCookie($referral_item, $overwrite = FALSE) {
     static $set_cookie = FALSE;
     if (!$set_cookie) {
       $existing_cookie = isset($_COOKIE[self::COOKIE_NAME]) ? json_decode($_COOKIE[self::COOKIE_NAME]) : NULL;
@@ -95,7 +95,7 @@ class ReferralUrlHandler implements InboundPathProcessorInterface {
       if ($referral_type) {
         $account = $referral_type->getReferralIDAccount($referral_item->refid);
         if ($account) {
-          if (!$existing_cookie) {
+          if ($overwrite || !$existing_cookie) {
             $cookie = new \stdClass();
             $cookie->uid = $account->id();
             $cookie->type = $referral_item->type;
