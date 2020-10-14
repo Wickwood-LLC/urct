@@ -5,7 +5,7 @@ namespace Drupal\urct\Tests\Functional;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\user_referral\Traits\UserReferralTypeCreationTrait;
 use Drupal\Tests\user_referral\Traits\ReferralIdFieldTrait;
-use Drupal\urct\ReferralUrlHandler;
+use Drupal\user_referral\Entity\UserReferralType;
 
 /**
  * Test basic functionality of Realname module.
@@ -79,13 +79,13 @@ class UrctTwoReferralIDTest extends BrowserTestBase {
 
   public function testReferralIDInUrl() {
     $this->drupalGet($this->consultant_referrer->get('field_referral_id')->first()->getValue()['value']);
-    $referral_cookie = json_decode($this->getSession()->getCookie(ReferralUrlHandler::COOKIE_NAME));
+    $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
     $this->assertEqual($this->consultant_referrer->id(), $referral_cookie->uid, t('Referral ID matches in cookied'));
     $this->assertEqual($this->consultant_referral_type->id(), $referral_cookie->type, t('Referral type matches to default referral type without it in the URL'));
 
     // Verify cookie re-assigning.
     $this->drupalGet($this->referral_partner_referrer->get($this->referral_id_field_2)->first()->getValue()['value'] . '/' . $this->referral_partner_referral_type->id());
-    $referral_cookie = json_decode($this->getSession()->getCookie(ReferralUrlHandler::COOKIE_NAME));
+    $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
     $this->assertEqual($this->referral_partner_referrer->id(), $referral_cookie->uid, t('Referral ID matches in cookied'));
     $this->assertEqual($this->referral_partner_referral_type->id(), $referral_cookie->type, t('Referral type matches to referral type in the URL'));
 

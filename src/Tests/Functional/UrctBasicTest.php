@@ -5,7 +5,7 @@ namespace Drupal\urct\Tests\Functional;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\user\Entity\User;
 use Drupal\Tests\user_referral\Traits\UserReferralTypeCreationTrait;
-use Drupal\urct\ReferralUrlHandler;
+use Drupal\user_referral\Entity\UserReferralType;
 
 /**
  * Test basic functionality of Realname module.
@@ -121,8 +121,8 @@ class UrctBasicTest extends BrowserTestBase {
     $this->getSession()->reset();
 
     $this->drupalGet('');
-    $this->assertSession()->cookieExists(ReferralUrlHandler::COOKIE_NAME);
-    $referral_cookie = json_decode($this->getSession()->getCookie(ReferralUrlHandler::COOKIE_NAME));
+    $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
+    $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
     $this->assertEqual($referral_cookie->uid, $this->consultant_referrer->id());
     $this->assertEqual($referral_cookie->type, $this->consultant_referral_type->id());
 
@@ -141,8 +141,8 @@ class UrctBasicTest extends BrowserTestBase {
     $this->getSession()->reset();
 
     $this->drupalGet('');
-    $this->assertSession()->cookieExists(ReferralUrlHandler::COOKIE_NAME);
-    $referral_cookie = json_decode($this->getSession()->getCookie(ReferralUrlHandler::COOKIE_NAME));
+    $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
+    $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
     $this->assertEqual($referral_cookie->uid, $this->referral_partner_referrer->id());
     $this->assertEqual($referral_cookie->type, $this->referral_partner_referral_type->id());
   }
@@ -171,16 +171,16 @@ class UrctBasicTest extends BrowserTestBase {
     $this->getSession()->reset();
 
     $this->drupalGet('');
-    $this->assertSession()->cookieExists(ReferralUrlHandler::COOKIE_NAME);
-    $referral_cookie = json_decode($this->getSession()->getCookie(ReferralUrlHandler::COOKIE_NAME));
+    $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
+    $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
     $first_referrer_uid = $referral_cookie->uid;
     
     // Close the prior connection and remove the collected state.
     $this->getSession()->reset();
     
     $this->drupalGet('');
-    $this->assertSession()->cookieExists(ReferralUrlHandler::COOKIE_NAME);
-    $referral_cookie = json_decode($this->getSession()->getCookie(ReferralUrlHandler::COOKIE_NAME));
+    $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
+    $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
     $second_referrer_uid = $referral_cookie->uid;
 
     $this->assertNotEqual($first_referrer_uid, $second_referrer_uid, t('Referrer rotation wroks'));
@@ -189,8 +189,8 @@ class UrctBasicTest extends BrowserTestBase {
     $this->getSession()->reset();
 
     $this->drupalGet('');
-    $this->assertSession()->cookieExists(ReferralUrlHandler::COOKIE_NAME);
-    $referral_cookie = json_decode($this->getSession()->getCookie(ReferralUrlHandler::COOKIE_NAME));
+    $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
+    $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
     $third_referrer_uid = $referral_cookie->uid;
 
     $this->assertNotEqual($second_referrer_uid, $third_referrer_uid, t('Referrer rotation wroks'));
