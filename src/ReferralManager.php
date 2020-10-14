@@ -30,11 +30,6 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
    */
   protected $referralItem;
 
-  // /**
-  //  * @var \stdClass;
-  //  */
-  // protected $referralItemInPath;
-
   /**
    * Config Factory Service Object.
    *
@@ -83,7 +78,6 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     $this->killSwitch = $killSwitch;
     $this->crawler = NULL;
     $this->currentUser = $account;
-    // $this->isAdminPage = \Drupal::service('router.admin_context')->isAdminRoute();
   }
 
   public function setCurrentReferralItem($referral_item) {
@@ -153,21 +147,9 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
             $last_selected->uid = $config->get('last_selected_uid') ?? 0;
             $last_selected->type = $config->get('last_selected_referral_type') ?? NULL;
 
-            // if ($fallback_type == 'roles') {
-            //   $roles_condition = $config->get('roles_condition');
-            //   if ($roles_condition == 'and') {
-            //     $uid = $this->getUserHavingAllRoles($last_selected_uid);
-            //   }
-            //   else {
-            //     $uid = $this->getUserHavingAnyRoles($last_selected_uid);
-            //   }
-            // }
             if ($fallback_type == 'referral_types') {
               $referral_item = $this->getUserFromReferralTypes($last_selected);
             }
-            // else if ($fallback_type == 'view') {
-            //   $uid = $this->getUserFromView($last_selected_uid);
-            // }
           }
           if (!empty($referral_item->uid) && $config->get('roll_up') == 'enroller') {
             $referrer_account = User::load($referral_item->uid);
@@ -404,10 +386,6 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     $request = $event->getRequest();
     // Get the requested path minus the base path.
     $path = $request->getPathInfo();
-
-    // if (strpos($path, '/user/') === 0) {
-    //   return;
-    // }
 
     $url_handler = \Drupal::service('urct.referral_url_handler');
     if (!ReferralUrlHandler::getReferralFromPath($path) && !$this->isCrawler() && $referral_item = $this->getCurrentReferralItem()) {
