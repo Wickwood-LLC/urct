@@ -8,7 +8,7 @@ use Drupal\user_referral\Entity\UserReferralType;
 
 class ReferralUrlHandler implements InboundPathProcessorInterface {
 
-  const COOKIE_NAME = 'urct_referral';
+  // const COOKIE_NAME = 'urct_referral';
 
   /**
    * Referrer user id and referral type.
@@ -18,6 +18,8 @@ class ReferralUrlHandler implements InboundPathProcessorInterface {
   protected $referralItem;
 
   protected $processed = FALSE;
+
+  public static $setting_path_cookie = FALSE;
 
   public static function getReferralFromPath($path) {
     $path_parts = array_filter(explode('/', $path));
@@ -90,17 +92,31 @@ class ReferralUrlHandler implements InboundPathProcessorInterface {
   public static function setPathReferralCookie($referral_item, $overwrite = FALSE) {
     static $set_cookie = FALSE;
     if (!$set_cookie) {
-      $existing_cookie = isset($_COOKIE[self::COOKIE_NAME]) ? json_decode($_COOKIE[self::COOKIE_NAME]) : NULL;
       $referral_type = UserReferralType::load($referral_item->type);
       if ($referral_type) {
         $account = $referral_type->getReferralIDAccount($referral_item->refid);
         if ($account) {
+          $existing_cookie = isset($_COOKIE[UserReferralType::COOKIE_NAME]) ? json_decode($_COOKIE[UserReferralType::COOKIE_NAME]) : NULL;
+          if ($existing_cookie) {
+            if (empty($existing_cookie->auto)) {
+              // Not to process cookie set with regular referral link or aliases.
+              return;
+            }
+            else if ($overwrite) {
+              // This cookie is with auto assigned referrer which is supposed to overwirte.
+              // So remove it from $_COOKIE array, other wise UserReferralType::setCookie() will apply reassign logic.
+              unset($_COOKIE[UserReferralType::COOKIE_NAME]);
+            }
+          }
           if ($overwrite || !$existing_cookie) {
-            $cookie = new \stdClass();
-            $cookie->uid = $account->id();
-            $cookie->type = $referral_item->type;
-            setcookie(self::COOKIE_NAME, json_encode($cookie), time() + 7 * 24 * 60 * 60, '/');
+            self::$setting_path_cookie = TRUE;
+            // $cookie = new \stdClass();
+            // $cookie->uid = $account->id();
+            // $cookie->type = $referral_item->type;
+            // setcookie(self::COOKIE_NAME, json_encode($cookie), time() + 7 * 24 * 60 * 60, '/');
+            $referral_type->setCookie($account, \Drupal::request());
             $set_cookie = TRUE;
+            self::$setting_path_cookie = FALSE;
           }
         }
       }

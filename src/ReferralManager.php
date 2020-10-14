@@ -20,6 +20,7 @@ use Drupal\user_referral\Event\UserReferralCookieEvent;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Drupal\Core\Routing\LocalRedirectResponse;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\user_referral\Event\UserReferralReferralEntryEvent;
 
 class ReferralManager implements OutboundPathProcessorInterface, EventSubscriberInterface {
 
@@ -118,16 +119,16 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
             $cookie_exists = TRUE;
           }
         }
-        else if (isset($_COOKIE[ReferralUrlHandler::COOKIE_NAME])) {
-          // Retrieve referral info from the cookie set by referral path item
-          $cookie = json_decode($_COOKIE[ReferralUrlHandler::COOKIE_NAME]);
-          if (!empty($cookie) && isset($cookie->uid)) {
-            $referral_item = new \stdClass();
-            $referral_item->uid = $cookie->uid;
-            $referral_item->type = $cookie->type;
-            $cookie_exists = TRUE;
-          }
-        }
+        // else if (isset($_COOKIE[UserReferralType::COOKIE_NAME])) {
+        //   // Retrieve referral info from the cookie set by referral path item
+        //   $cookie = json_decode($_COOKIE[UserReferralType::COOKIE_NAME]);
+        //   if (!empty($cookie) && isset($cookie->uid)) {
+        //     $referral_item = new \stdClass();
+        //     $referral_item->uid = $cookie->uid;
+        //     $referral_item->type = $cookie->type;
+        //     $cookie_exists = TRUE;
+        //   }
+        // }
         if (empty($referral_item)) {
           if ($this->isCrawler()) {
             $default_fallback_referrer_id = $config->get('default_fallback_referrer');
@@ -370,6 +371,34 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
         $this->referralItem->type = $cookie->type;
       }
     }
+    if (ReferralUrlHandler::$setting_path_cookie) {
+      // Setting path cookie is with auto-assinged referrer.
+      $cookie->auto = 1;
+      $event->setCookie($cookie);
+    }
+  }
+
+  /**
+   *
+   * @param \Drupal\user_referral\Event\UserReferralReferralEntryEvent $event
+   *  The Event to process.
+   */
+  public function onReferralEntryBeingCreated(UserReferralReferralEntryEvent $event) {
+    $cookie = $event->getCookie();
+    if (!empty($cookie->auto)) {
+      $referral_entry = $event->getEntry();
+      $referral_entry['auto_referrer'] = 1;
+      $event->setEntry($referral_entry);
+    }
+  }
+
+  public function onReferralCookieSettingLogic(UserReferralCookieEvent $event) {
+    $existing_cookie = isset($_COOKIE[UserReferralType::COOKIE_NAME]) ? json_decode($_COOKIE[UserReferralType::COOKIE_NAME]) : NULL;
+    if (!ReferralUrlHandler::$setting_path_cookie && $existing_cookie && empty($existing_cookie->auto)) {
+      // Setting not path cookie, but a buth cookie already exists.
+      // So, unset it as referral link cookie has priority.
+      unset($_COOKIE[UserReferralType::COOKIE_NAME]);
+    }
   }
 
   /**
@@ -409,6 +438,8 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     $events[KernelEvents::RESPONSE][] = ['onKernelResponse'];
     $events[UserReferralCookieEvent::COOKIE_SET][] = ['onReferralCookieBeingSet'];
     $events[KernelEvents::REQUEST][] = ['onKernelRequestRedirect', 30];
+    $events[UserReferralReferralEntryEvent::ENTRY_CREATE][] = ['onReferralEntryBeingCreated'];
+    $events[UserReferralCookieEvent::COOKIE_PRE_ASSIGN_LOGIC][] = ['onReferralCookieSettingLogic'];
     return $events;
   }
 
