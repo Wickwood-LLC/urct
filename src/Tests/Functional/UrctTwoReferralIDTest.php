@@ -10,7 +10,7 @@ use Drupal\urct\ReferralUrlHandler;
 /**
  * Test basic functionality of Realname module.
  *
- * @group Realname
+ * @group urct
  */
 class UrctTwoReferralIDTest extends BrowserTestBase {
 
