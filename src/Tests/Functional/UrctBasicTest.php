@@ -173,7 +173,20 @@ class UrctBasicTest extends BrowserTestBase {
     $this->drupalGet('');
     $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
     $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
+    $this->assertEqual(isset($referral_cookie->auto), TRUE, t('Referral cookie auto property exists'));
+    $this->assertEqual(1, $referral_cookie->auto, t('Referral cookie should flagged as auto referral assgined'));
     $first_referrer_uid = $referral_cookie->uid;
+
+    // To ensure referral cookie is retained when accessed again.
+    $referral_cookie_old = clone $referral_cookie;
+    $this->drupalGet('');
+    $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
+    $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
+    $first_referrer_uid = $referral_cookie->uid;
+    $this->assertEqual($referral_cookie_old->uid, $referral_cookie->uid, t('Referrer UID in cookie retained'));
+    $this->assertEqual($referral_cookie_old->type, $referral_cookie->type, t('Referrer UID in cookie retained'));
+    $this->assertEqual(isset($referral_cookie->auto), TRUE, t('Referral cookie auto property exists'));
+    $this->assertEqual(1, $referral_cookie->auto, t('Referral cookie should flagged as auto referral assgined'));
     
     // Close the prior connection and remove the collected state.
     $this->getSession()->reset();
@@ -181,6 +194,8 @@ class UrctBasicTest extends BrowserTestBase {
     $this->drupalGet('');
     $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
     $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
+    $this->assertEqual(isset($referral_cookie->auto), TRUE, t('Referral cookie auto property exists'));
+    $this->assertEqual(1, $referral_cookie->auto, t('Referral cookie should flagged as auto referral assgined'));
     $second_referrer_uid = $referral_cookie->uid;
 
     $this->assertNotEqual($first_referrer_uid, $second_referrer_uid, t('Referrer rotation wroks'));
@@ -191,6 +206,8 @@ class UrctBasicTest extends BrowserTestBase {
     $this->drupalGet('');
     $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
     $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
+    $this->assertEqual(isset($referral_cookie->auto), TRUE, t('Referral cookie auto property exists'));
+    $this->assertEqual(1, $referral_cookie->auto, t('Referral cookie should flagged as auto referral assgined'));
     $third_referrer_uid = $referral_cookie->uid;
 
     $this->assertNotEqual($second_referrer_uid, $third_referrer_uid, t('Referrer rotation wroks'));
