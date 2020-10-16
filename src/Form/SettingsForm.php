@@ -35,74 +35,65 @@ class SettingsForm extends ConfigFormBase {
     $config = $this->config('urct.settings');
 
     $input = $form_state->getUserInput();
-    if (!empty($input['default_fallback_referrer']) && preg_match('/^.*\((\d+)\)$/', $input['default_fallback_referrer'], $matces)) {
-      $default_fallback_referrer_id = $matces[1];
+    if (!empty($input['default_fallback_referrer']['referrer']) && preg_match('/^.*\((\d+)\)$/', $input['default_fallback_referrer']['referrer'], $matces)) {
+      $default_fallback_referrer['referrer'] = $matces[1];
+      $default_fallback_referrer['type'] = $input['default_fallback_referrer']['type'] ?? NULL;
     }
     else {
-      $default_fallback_referrer_id = $config->get('default_fallback_referrer');
+      $default_fallback_referrer = $config->get('default_fallback_referrer');
     }
 
-    $default_fallback_referrer = NULL;
-    if (!empty($default_fallback_referrer_id)) {
-      $default_fallback_referrer = User::load($default_fallback_referrer_id);
-    }
+    // $default_fallback_referrer_user = NULL;
+    // if (!empty($default_fallback_referrer['referrer'])) {
+    //   $default_fallback_referrer_user = User::load($default_fallback_referrer['referrer']);
+    // }
 
-    $form['default_fallback'] = [
-      '#type' => 'container',
-      '#prefix' => '<div id="urct-settings-default-referral-type" >',
-      '#suffix' => '</div>',
-    ];
+    // $form['default_fallback'] = [
+    //   '#type' => 'container',
+    //   '#prefix' => '<div id="urct-settings-default-referral-type" >',
+    //   '#suffix' => '</div>',
+    // ];
 
-    $form['default_fallback']['default_fallback_referrer'] = [
-      '#type' => 'entity_autocomplete',
-      '#selection_handler' => 'user_referral:referrer_user_selection',
-      '#target_type' => 'user',
-      '#title' => $this->t('Default referrer user'),
+    $form['default_fallback_referrer'] = [
+      '#type' => 'referrer',
+      '#title' => $this->t('Default fallback referrer'),
+      '#user_title' => t('Referrer user'),
+      '#type_title' => t('Referral type'),
       '#default_value' => $default_fallback_referrer,
       '#description' => $this->t('Type a name to find required user and select. This user account will be used as referrer when system fails to get a referrer for a vistior through any of fallback methods configured below.'),
       '#required' => TRUE,
-      '#ajax' => [
-        'callback' => [$this, 'refreshReferralTypeField'],
-        // 'disable-refocus' => FALSE, // Or TRUE to prevent re-focusing on the triggering element.
-        'event' => 'change',
-        'wrapper' => 'urct-settings-default-referral-type', // This element is updated with this AJAX callback.
-        'progress' => [
-          'type' => 'throbber',
-          'message' => $this->t('Checking availability...'),
-        ],
-      ]
     ];
 
-    $default_referrer_referral_type_options = [];
-    if ($default_fallback_referrer) {
-      foreach (UserReferralType::loadMultiple() as $referral_type_id => $referral_type) {
-        $user_roles = $default_fallback_referrer->getRoles();
-        $referral_type_roles = $referral_type->getRoles();
-        if (!empty(array_intersect($referral_type_roles, $user_roles))) {
-          $default_referrer_referral_type_options[$referral_type_id] = $referral_type->label();
-        }
-      }
-    }
+    // $default_referrer_referral_type_options = [];
+    // if ($default_fallback_referrer) {
+    //   foreach (UserReferralType::loadMultiple() as $referral_type_id => $referral_type) {
+    //     $user_roles = $default_fallback_referrer->getRoles();
+    //     $referral_type_roles = $referral_type->getRoles();
+    //     if (!empty(array_intersect($referral_type_roles, $user_roles))) {
+    //       $default_referrer_referral_type_options[$referral_type_id] = $referral_type->label();
+    //     }
+    //   }
+    // }
 
-    $form['default_fallback']['default_fallback_referrer_referral_type'] = [
-      '#type' => 'radios',
-      '#title' => $this->t('Default referral type'),
-      '#options' => $default_referrer_referral_type_options,
-      '#default_value' => $config->get('default_fallback_referrer_referral_type') ?? [],
-      '#description' => $this->t('Select the referral type to be used for fallback.'),
-      '#attributes' => [
-        'class' => ['indent-1'],
-      ],
-      '#required' => TRUE,
-      '#prefix' => '<div class="indent-1">',
-      '#suffix' => '</div>',
-    ];
+    // $form['default_fallback']['default_fallback_referrer_referral_type'] = [
+    //   '#type' => 'radios',
+    //   '#title' => $this->t('Default referral type'),
+    //   '#options' => $default_referrer_referral_type_options,
+    //   '#default_value' => $config->get('default_fallback_referrer_referral_type') ?? [],
+    //   '#description' => $this->t('Select the referral type to be used for fallback.'),
+    //   '#attributes' => [
+    //     'class' => ['indent-1'],
+    //   ],
+    //   '#required' => TRUE,
+    //   '#prefix' => '<div class="indent-1">',
+    //   '#suffix' => '</div>',
+    // ];
 
-    if (count($default_referrer_referral_type_options) < 2) {
-      $default_referrer_referral_type_options_keys = array_keys($default_referrer_referral_type_options);
-      $form['default_fallback']['default_fallback_referrer_referral_type']['#value'] = reset($default_referrer_referral_type_options_keys);
-      $form['default_fallback']['default_fallback_referrer_referral_type']['#access']  = FALSE;
-    }
+    // if (count($default_referrer_referral_type_options) < 2) {
+    //   $default_referrer_referral_type_options_keys = array_keys($default_referrer_referral_type_options);
+    //   $form['default_fallback']['default_fallback_referrer_referral_type']['#value'] = reset($default_referrer_referral_type_options_keys);
+    //   $form['default_fallback']['default_fallback_referrer_referral_type']['#access']  = FALSE;
+    // }
 
     $fallback_type_options = [
       'default_fallback_referrer' => $this->t('Default referrer user configured above'),
@@ -214,7 +205,8 @@ class SettingsForm extends ConfigFormBase {
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $fallback_type = $form_state->getValue('fallback_type');
 
-    if (!($fallback_referrer = User::load($form_state->getValue('default_fallback_referrer'))) || !$fallback_referrer->isActive() ) {
+    $default_fallback_referrer = $form_state->getValue('default_fallback_referrer');
+    if (!($fallback_referrer = User::load($default_fallback_referrer['referrer'])) || !$fallback_referrer->isActive() ) {
       $form_state->setErrorByName('default_fallback_referrer', t('Please select an active user account.'));
     }
     if ($fallback_type == 'referral_types' && empty(array_filter($form_state->getValue('referral_types'))) ) {
@@ -229,7 +221,7 @@ class SettingsForm extends ConfigFormBase {
     $config = $this->config('urct.settings');
     $config->set('fallback_type', $form_state->getValue('fallback_type'));
     $config->set('default_fallback_referrer', $form_state->getValue('default_fallback_referrer'));
-    $config->set('default_fallback_referrer_referral_type', $form_state->getValue('default_fallback_referrer_referral_type'));
+    // $config->set('default_fallback_referrer_referral_type', $form_state->getValue('default_fallback_referrer_referral_type'));
     $config->set('referral_types', $form_state->getValue('referral_types'));
     $config->set('referral_types_filter_by_view', $form_state->getValue('referral_types_filter_by_view'));
     $config->set('referral_types_filter_by_view_negate', $form_state->getValue('referral_types_filter_by_view_negate'));
@@ -242,8 +234,8 @@ class SettingsForm extends ConfigFormBase {
     drupal_flush_all_caches();
   }
 
-  public function refreshReferralTypeField(array &$form, FormStateInterface $form_state) {
-    return $form['default_fallback'];
-  }
+  // public function refreshReferralTypeField(array &$form, FormStateInterface $form_state) {
+  //   return $form['default_fallback'];
+  // }
 
 }

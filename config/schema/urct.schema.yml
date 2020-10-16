@@ -8,11 +8,20 @@ urct.settings:
       type: string
       label: 'Fallback user selection'
     default_fallback_referrer:
-      type: integer
-      label: User ID of the account to be used a fallback referrer.
-    default_fallback_referrer_referral_type:
-      type: string
-      label: Default referral type to be used for fallback referrer.
+      type: mapping
+      label: 'Optional features'
+      mapping:
+        referrer:
+          type: integer
+          label: 'Fallback referrer user ID'
+        type:
+          type: string
+          label: 'Referral type'
+      # type: integer
+      # label: User ID of the account to be used a fallback referrer.
+    # default_fallback_referrer_referral_type:
+    #   type: string
+    #   label: Default referral type to be used for fallback referrer.
     # roles:
     #   type: sequence
     #   label: Roles to which to be used to select the user for falling back.

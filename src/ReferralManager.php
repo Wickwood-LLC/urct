@@ -131,11 +131,11 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
         // }
         if (empty($referral_item)) {
           if ($this->isCrawler()) {
-            $default_fallback_referrer_id = $config->get('default_fallback_referrer');
-            if (!empty($default_fallback_referrer_id)) {
+            $default_fallback_referrer = $config->get('default_fallback_referrer');
+            if (!empty($default_fallback_referrer) && !empty($default_fallback_referrer['referrer'])) {
               $referral_item = new \stdClass();
-              $referral_item->uid = $default_fallback_referrer_id;
-              $referral_item->type = $config->get('default_fallback_referrer_referral_type');
+              $referral_item->uid = $default_fallback_referrer['referrer'];
+              $referral_item->type = $default_fallback_referrer['type'];
             }
           }
         }
@@ -173,11 +173,11 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
       }
 
       if (empty($referral_item->uid)) {
-        $default_fallback_referrer_id = $config->get('default_fallback_referrer');
-        if (!empty($default_fallback_referrer_id)) {
+        $default_fallback_referrer = $config->get('default_fallback_referrer');
+        if (!empty($default_fallback_referrer) && !empty($default_fallback_referrer['referrer'])) {
           $referral_item = new \stdClass();
-          $referral_item->uid = $default_fallback_referrer_id;
-          $referral_item->type = $config->get('default_fallback_referrer_referral_type');
+          $referral_item->uid = $default_fallback_referrer['referrer'];
+          $referral_item->type = $default_fallback_referrer['type'];
         }
       }
       if ($referral_item) {

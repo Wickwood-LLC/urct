@@ -94,7 +94,7 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $this->drupalGet('admin/config/people/user-referral/tokens');
 
     $edit = [
-      'default_fallback_referrer' => 'referrer1 (' . $this->consultant_referrer->id() . ')',
+      'default_fallback_referrer[referrer]' => 'referrer1 (' . $this->consultant_referrer->id() . ')',
       // 'default_fallback_referrer_referral_type' => 'consultant',
       'fallback_type' => 'default_fallback_referrer',
     ];

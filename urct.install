@@ -10,14 +10,14 @@ function urct_requirements($phase) {
   $requirements = [];
   if ($phase === 'runtime') {
     $config = \Drupal::config('urct.settings');
-    $fallback_user_id = $config->get('default_fallback_referrer');
+    $default_fallback_referrer = $config->get('default_fallback_referrer');
     $severity = REQUIREMENT_OK;
-    if (empty($fallback_user_id)) {
+    if (empty($default_fallback_referrer) || empty($default_fallback_referrer['referrer'])) {
       $value = t('A default fallback referrer is required');
       $description = t('Please configure a fallback referrer account at <a href=":url">@name</a>', [':url' => Url::fromRoute('urct.settings')->toString(), '@name' => 'User Referral Cookie Tokens settings page']);
       $severity = REQUIREMENT_ERROR;
     }
-    else if ($fallback_user = User::load($fallback_user_id)) {
+    else if ($fallback_user = User::load($default_fallback_referrer['referrer'])) {
       if (!$fallback_user->isActive()) {
         $value = t('An active account is required as default fallback referrer');
         $description = t('<a href=":user_edit_url">@user_name</a> has been configured as default fallback referral account. But that account is not active. Please make that account active or select a differnet active user account to set as default fallback referrer at <a href=":url">@name</a>.',[':user_edit_url' => Url::fromRoute('entity.user.edit_form', ['user' => $fallback_user_id]), '@user_name' => $fallback_user->label(), ':url' => Url::fromRoute('urct.settings')->toString(), '@name' => 'User Referral Cookie Tokens settings page']);
