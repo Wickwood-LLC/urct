@@ -121,36 +121,6 @@ class SettingsForm extends ConfigFormBase {
       '#required' => TRUE,
     ];
 
-    // $form['roles'] = [
-    //   '#type' => 'checkboxes',
-    //   '#title' => $this->t('Roles'),
-    //   '#options' => user_role_names(TRUE),
-    //   '#default_value' => $config->get('roles'),
-    //   '#description' => $this->t('Select one or more roles.'),
-    //   '#states' => [
-    //     'visible' => [
-    //       ':input[name="fallback_type"]' => ['value' => 'roles'],
-    //     ],
-    //   ],
-    // ];
-
-    // $roles_condition_options = [
-    //   'or' => $this->t('User having any of selected roles.'),
-    //   'and' => $this->t('User having all of selected roles.'),
-    // ];
-    // $form['roles_condition'] = [
-    //   '#type' => 'radios',
-    //   '#title' => $this->t('Roles matching condition'),
-    //   '#options' => $roles_condition_options,
-    //   '#default_value' => $config->get('roles_condition') ?? 'or',
-    //   '#description' => $this->t('Select one or more roles.'),
-    //   '#states' => [
-    //     'visible' => [
-    //       ':input[name="fallback_type"]' => ['value' => 'roles'],
-    //     ],
-    //   ],
-    // ];
-
     $form['referral_types'] = [
       '#type' => 'checkboxes',
       '#title' => $this->t('Referral types'),
@@ -194,16 +164,6 @@ class SettingsForm extends ConfigFormBase {
       '#prefix' => '<div class="indent-3">',
       '#suffix' => '</div>',
     ];
-
-    // $form['view'] = [
-    //   '#type' => 'markup',
-    //   '#markup' => $this->t('Fallback referral account will be selected from the reult of view <a href=":url">@name</a>. You may edit the view to change its filter and sorting to set the conditions and sorting for the rotation.', [':url' => Url::fromRoute('entity.view.edit_display_form', ['view' => 'urct_referral_fallbacks', 'display_id' => 'default'])->toString(), '@name' => 'Referral Fallbacks']),
-    //   '#states' => [
-    //     'visible' => [
-    //       ':input[name="fallback_type"]' => ['value' => 'view'],
-    //     ],
-    //   ],
-    // ];
 
     $form['roll_up'] = [
       '#type' => 'radios',
@@ -257,9 +217,6 @@ class SettingsForm extends ConfigFormBase {
     if (!($fallback_referrer = User::load($form_state->getValue('default_fallback_referrer'))) || !$fallback_referrer->isActive() ) {
       $form_state->setErrorByName('default_fallback_referrer', t('Please select an active user account.'));
     }
-    // if ($fallback_type == 'roles' && empty(array_filter($form_state->getValue('roles'))) ) {
-    //   $form_state->setErrorByName('roles', t('Select at least one role.'));
-    // }
     if ($fallback_type == 'referral_types' && empty(array_filter($form_state->getValue('referral_types'))) ) {
       $form_state->setErrorByName('referral_types', t('Select at least one referral type.'));
     }
@@ -273,8 +230,6 @@ class SettingsForm extends ConfigFormBase {
     $config->set('fallback_type', $form_state->getValue('fallback_type'));
     $config->set('default_fallback_referrer', $form_state->getValue('default_fallback_referrer'));
     $config->set('default_fallback_referrer_referral_type', $form_state->getValue('default_fallback_referrer_referral_type'));
-    // $config->set('roles', $form_state->getValue('roles'));
-    // $config->set('roles_condition', $form_state->getValue('roles_condition'));
     $config->set('referral_types', $form_state->getValue('referral_types'));
     $config->set('referral_types_filter_by_view', $form_state->getValue('referral_types_filter_by_view'));
     $config->set('referral_types_filter_by_view_negate', $form_state->getValue('referral_types_filter_by_view_negate'));
