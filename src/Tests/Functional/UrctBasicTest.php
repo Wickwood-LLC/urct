@@ -182,7 +182,6 @@ class UrctBasicTest extends BrowserTestBase {
     $this->drupalGet('');
     $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
     $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
-    $first_referrer_uid = $referral_cookie->uid;
     $this->assertEqual($referral_cookie_old->uid, $referral_cookie->uid, t('Referrer UID in cookie retained'));
     $this->assertEqual($referral_cookie_old->type, $referral_cookie->type, t('Referrer UID in cookie retained'));
     $this->assertEqual(isset($referral_cookie->auto), TRUE, t('Referral cookie auto property exists'));
