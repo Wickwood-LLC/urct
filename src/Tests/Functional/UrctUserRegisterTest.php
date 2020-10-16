@@ -78,7 +78,7 @@ class UrctUserRegisterTest extends BrowserTestBase {
     // User to set up realname.
     $this->admin_user = $this->drupalCreateUser($permissions);
 
-    $config = \Drupal::configFactory()->getEditable('urct.settings');
+    // $config = \Drupal::configFactory()->getEditable('urct.settings');
 
     // NOT Working: why?
     // $config->set('default_fallback_referrer', $this->consultant_referrer->id());
