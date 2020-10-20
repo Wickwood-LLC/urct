@@ -327,11 +327,15 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
   }
 
   public function appendPathReferralToPath($path, $referral_item) {
+    $prefix = '';
+    if (\Drupal::service('urct.path_validator')->getUrlIfValidWithoutAccessCheck($path)) {
+      $prefix = 'direct/';
+    }
     if (isset($referral_item->refid_only) && $referral_item->refid_only) {
-      return rtrim($path, '/') . '/' . $referral_item->refid;
+      return rtrim($path, '/') . '/' . $prefix . $referral_item->refid;
     }
     else {
-      return rtrim($path, '/') . '/' . $referral_item->refid . '/' . $referral_item->type;
+      return rtrim($path, '/') . '/' . $prefix . $referral_item->refid . '/' . $referral_item->type;
     }
   }
 

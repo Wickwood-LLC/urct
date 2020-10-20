@@ -42,6 +42,9 @@ class ReferralUrlHandler implements InboundPathProcessorInterface {
             $num_items_to_remove = 2;
           }
         }
+        if ($path_part_count > 2 && end($path_parts) == 'direct') {
+          $num_items_to_remove++;
+        }
       }
       if (!$account || !$referral_type) {
         $referral_types = UserReferralType::loadMultiple();
