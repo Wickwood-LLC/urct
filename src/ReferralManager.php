@@ -327,16 +327,22 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
   }
 
   public function appendPathReferralToPath($path, $referral_item) {
-    $prefix = '';
-    if (\Drupal::service('urct.path_validator')->getUrlIfValidWithoutAccessCheck($path)) {
-      $prefix = 'direct/';
-    }
     if (isset($referral_item->refid_only) && $referral_item->refid_only) {
-      return rtrim($path, '/') . '/' . $prefix . $referral_item->refid;
+      $new_path = rtrim($path, '/') . '/' . $referral_item->refid;
     }
     else {
-      return rtrim($path, '/') . '/' . $prefix . $referral_item->refid . '/' . $referral_item->type;
+      $new_path = rtrim($path, '/') . '/' . $referral_item->refid . '/' . $referral_item->type;
     }
+    if (\Drupal::service('urct.path_validator')->getUrlIfValidWithoutAccessCheck($new_path)) {
+      $prefix = 'direct/';
+      if (isset($referral_item->refid_only) && $referral_item->refid_only) {
+        $new_path = rtrim($path, '/') . '/' . $prefix . $referral_item->refid;
+      }
+      else {
+        $new_path = rtrim($path, '/') . '/' . $prefix . $referral_item->refid . '/' . $referral_item->type;
+      }
+    }
+    return $new_path;
   }
 
   /**
