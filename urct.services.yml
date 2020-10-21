@@ -16,7 +16,7 @@ services:
     tags:
       - { name: service_collector, tag: path_processor_inbound, call: addInbound }
   urct.router_route_provider:
-    class: Drupal\Core\Routing\RouteProvider
+    class: Drupal\urct\Routing\UrctRouteProvider
     arguments: ['@database', '@state', '@path.current', '@cache.data', '@urct.path_processor_manager', '@cache_tags.invalidator', 'router', '@language_manager']
     tags:
       - { name: event_subscriber }
