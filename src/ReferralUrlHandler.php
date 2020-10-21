@@ -22,6 +22,10 @@ class ReferralUrlHandler implements InboundPathProcessorInterface {
   public static $setting_path_cookie = FALSE;
 
   public static function getReferralFromPath($path) {
+    // We parse the path to avoid any issue when path is an absolute URL.
+    $parsed_url = parse_url($path);
+    $path = $parsed_url['path'];
+
     $path_parts = array_filter(explode('/', $path));
     $path_part_count = count($path_parts);
     $original_path_parts = $path_parts;
