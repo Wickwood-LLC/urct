@@ -109,13 +109,11 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $this->getSession()->reset();
 
     $this->drupalGet('');
-    $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
-    $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
+    $referral_cookie = $this->getReferralCookie();
     $last_user = $this->registerUser();
     $this->assertSession()->statusCodeEquals(200);
     $referral_entry = UserReferral::getReferralEntry($last_user);
-    $this->assertEqual($referral_entry->referrer_uid, $referral_cookie->uid, t('Referrer UID matche in cookie and referral entry'));
-    $this->assertEqual($referral_entry->type, $referral_cookie->type, t('Referrer UID matche in cookie and referral entry'));
+    $this->assertReferralCookie($referral_entry->referrer_uid, $referral_entry->type);
     $this->assertEqual(1, $referral_cookie->auto, t('Referral cookie has auto flag set indicating auto assigned'));
     $this->assertEqual(1, $referral_entry->auto_referrer, t('Referral entry has auto flag set indicating auto assigned'));
 
@@ -125,10 +123,8 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $this->drupalGet($this->consultant_referrer->get('field_referral_id')->first()->getValue()['value']);
     $last_user = $this->registerUser();
     $this->assertSession()->statusCodeEquals(200);
-    $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
-    $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
-    $this->assertEqual($referral_cookie->uid, $this->consultant_referrer->id(), t('Referrer UID matches in cookied'));
-    $this->assertEqual($referral_cookie->type, $this->consultant_referral_type->id(), t('Referral type matches in cookie'));
+    $referral_cookie = $this->getReferralCookie();
+    $this->assertReferralCookie($this->consultant_referrer->id(), $this->consultant_referral_type->id());
     $this->assertEqual(1, $referral_cookie->auto, t('Referral cookie has auto flag indicating auto assigned'));
     $referral_entry = UserReferral::getReferralEntry($last_user);
     $this->assertNotIdentical(FALSE, $referral_entry, t('Referral entry exists'));
@@ -141,10 +137,8 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $this->drupalGet($this->referral_partner_referrer->get($this->referral_id_field_2)->first()->getValue()['value'] . '/' . $this->referral_partner_referral_type->id());
     $last_user = $this->registerUser();
     $this->assertSession()->statusCodeEquals(200);
-    $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
-    $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
-    $this->assertEqual($referral_cookie->uid, $this->referral_partner_referrer->id(), t('Referrer UID matches in cookied'));
-    $this->assertEqual($referral_cookie->type, $this->referral_partner_referral_type->id(), t('Referral type matches in cookie'));
+    $referral_cookie = $this->getReferralCookie();
+    $this->assertReferralCookie($this->referral_partner_referrer->id(), $this->referral_partner_referral_type->id());
     $this->assertEqual(1, $referral_cookie->auto, t('Referral cookie has auto flag indicating auto assigned'));
     $referral_entry = UserReferral::getReferralEntry($last_user);
     $this->assertNotIdentical(FALSE, $referral_entry, t('Referral entry exists'));
@@ -157,10 +151,8 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $this->drupalGet('user/' . $this->consultant_referrer->id() . '/user-referral/' . $this->consultant_referral_type->id());
     $last_user = $this->registerUser();
     $this->assertSession()->statusCodeEquals(200);
-    $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
-    $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
-    $this->assertEqual($referral_cookie->uid, $this->consultant_referrer->id(), t('Referrer UID matches in cookied'));
-    $this->assertEqual($referral_cookie->type, $this->consultant_referral_type->id(), t('Referral type matches in cookie'));
+    $referral_cookie = $this->getReferralCookie();
+    $this->assertReferralCookie($this->consultant_referrer->id(), $this->consultant_referral_type->id());
     $this->assertEqual(TRUE, empty($referral_cookie->auto), t('Referral cookie has no auto flag indicating auto assigned'));
     $referrer = UserReferral::getReferrer($last_user);
     $this->assertEqual($this->consultant_referrer->id(), $referrer->id(), t('Referrer got recorded'));
