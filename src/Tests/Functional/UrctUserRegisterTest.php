@@ -152,8 +152,6 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $referral_cookie = $this->getReferralCookie();
     $this->assertReferralCookie($this->consultant_referrer->id(), $this->consultant_referral_type->id());
     $this->assertEqual(TRUE, empty($referral_cookie->auto), t('Referral cookie has no auto flag indicating auto assigned'));
-    $referrer = UserReferral::getReferrer($last_user);
-    $this->assertEqual($this->consultant_referrer->id(), $referrer->id(), t('Referrer got recorded'));
     $referral_entry = UserReferral::getReferralEntry($last_user);
     $this->assertReferralEntry($last_user, $this->consultant_referrer, $this->consultant_referral_type, 0, 0);
   }
