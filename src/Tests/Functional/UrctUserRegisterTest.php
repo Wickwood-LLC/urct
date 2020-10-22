@@ -9,6 +9,7 @@ use Drupal\Tests\user_referral\Traits\UserRegistrationTrait;
 use Drupal\user\Entity\User;
 use Drupal\user_referral\UserReferral;
 use Drupal\user_referral\Entity\UserReferralType;
+use Drupal\Tests\urct\Traits\UrctHelperTrait;
 
 /**
  * Test user registrations.
@@ -26,6 +27,7 @@ class UrctUserRegisterTest extends BrowserTestBase {
   }
 
   use UserRegistrationTrait;
+  use UrctHelperTrait;
 
   protected $defaultTheme = 'stark';
 
@@ -127,9 +129,7 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $this->assertReferralCookie($this->consultant_referrer->id(), $this->consultant_referral_type->id());
     $this->assertEqual(1, $referral_cookie->auto, t('Referral cookie has auto flag indicating auto assigned'));
     $referral_entry = UserReferral::getReferralEntry($last_user);
-    $this->assertNotIdentical(FALSE, $referral_entry, t('Referral entry exists'));
-    $this->assertEqual($this->consultant_referrer->id(), $referral_entry->referrer_uid, t('Referrer got recorded'));
-    $this->assertEqual(1, $referral_entry->auto_referrer, t('Referrer entyr has auto_referrer flag set indicating auto assinged referrer'));
+    $this->assertReferralEntry($last_user, $this->consultant_referrer, $this->consultant_referral_type, 0, 1);
 
     $this->getSession()->reset(); // Reset browser session cookie, so re-assining logic wont affect.
 
@@ -141,9 +141,7 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $this->assertReferralCookie($this->referral_partner_referrer->id(), $this->referral_partner_referral_type->id());
     $this->assertEqual(1, $referral_cookie->auto, t('Referral cookie has auto flag indicating auto assigned'));
     $referral_entry = UserReferral::getReferralEntry($last_user);
-    $this->assertNotIdentical(FALSE, $referral_entry, t('Referral entry exists'));
-    $this->assertEqual($this->referral_partner_referrer->id(), $referral_entry->referrer_uid, t('Referrer got recorded'));
-    $this->assertEqual(1, $referral_entry->auto_referrer, t('Referrer as auto assinged referrer'));
+    $this->assertReferralEntry($last_user, $this->referral_partner_referrer, $this->referral_partner_referral_type, 0, 1);
 
 
     // Ensure accessing referral entry does not set auto flag in cookie or referral entry
@@ -157,9 +155,6 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $referrer = UserReferral::getReferrer($last_user);
     $this->assertEqual($this->consultant_referrer->id(), $referrer->id(), t('Referrer got recorded'));
     $referral_entry = UserReferral::getReferralEntry($last_user);
-    $this->assertNotIdentical(FALSE, $referral_entry, t('Referral entry exists'));
-    $this->assertEqual($this->consultant_referrer->id(), $referral_entry->referrer_uid, t('Referrer got recorded'));
-    $this->assertEqual($this->consultant_referral_type->id(), $referral_entry->type, t('Referral type matches in referral entry'));
-    $this->assertEqual(0, $referral_entry->auto_referrer, t('Referrer as auto assinged referrer is not set.'));
+    $this->assertReferralEntry($last_user, $this->consultant_referrer, $this->consultant_referral_type, 0, 0);
   }
 }
