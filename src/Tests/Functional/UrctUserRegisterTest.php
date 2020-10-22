@@ -112,13 +112,16 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $edit['name'] = $name = $this->randomMachineName();
     $edit['mail'] = $mail = $edit['name'] . '@example.com';
     $this->drupalPostForm('user/register', $edit, t('Create new account'));
+    $storage = $this->container
+      ->get('entity_type.manager')
+      ->getStorage('user');
+    $accounts = $storage
+      ->loadByProperties([
+      'name' => $name,
+      'mail' => $mail,
+    ]);
+    $last_user = reset($accounts);
     $this->assertSession()->statusCodeEquals(200);
-    $uids = \Drupal::entityQuery('user')
-      ->sort('created', 'DESC')
-      ->range(0, 1)
-      ->execute();
-    $last_user_uid = reset($uids);
-    $last_user = User::load($last_user_uid);
     $referral_entry = UserReferral::getReferralEntry($last_user);
     $this->assertEqual($referral_entry->referrer_uid, $referral_cookie->uid, t('Referrer UID matche in cookie and referral entry'));
     $this->assertEqual($referral_entry->type, $referral_cookie->type, t('Referrer UID matche in cookie and referral entry'));
@@ -133,18 +136,21 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $edit['name'] = $name = $this->randomMachineName();
     $edit['mail'] = $mail = $edit['name'] . '@example.com';
     $this->drupalPostForm('user/register', $edit, t('Create new account'));
+    $storage = $this->container
+      ->get('entity_type.manager')
+      ->getStorage('user');
+    $accounts = $storage
+      ->loadByProperties([
+      'name' => $name,
+      'mail' => $mail,
+    ]);
+    $last_user = reset($accounts);
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
     $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
     $this->assertEqual($referral_cookie->uid, $this->consultant_referrer->id(), t('Referrer UID matches in cookied'));
     $this->assertEqual($referral_cookie->type, $this->consultant_referral_type->id(), t('Referral type matches in cookie'));
     $this->assertEqual(1, $referral_cookie->auto, t('Referral cookie has auto flag indicating auto assigned'));
-    $uids = \Drupal::entityQuery('user')
-      ->sort('created', 'DESC')
-      ->range(0, 1)
-      ->execute();
-    $last_user_uid = reset($uids);
-    $last_user = User::load($last_user_uid);
     $referral_entry = UserReferral::getReferralEntry($last_user);
     $this->assertNotIdentical(FALSE, $referral_entry, t('Referral entry exists'));
     $this->assertEqual($this->consultant_referrer->id(), $referral_entry->referrer_uid, t('Referrer got recorded'));
@@ -158,19 +164,21 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $edit['name'] = $name = $this->randomMachineName();
     $edit['mail'] = $mail = $edit['name'] . '@example.com';
     $this->drupalPostForm('user/register', $edit, t('Create new account'));
+    $storage = $this->container
+      ->get('entity_type.manager')
+      ->getStorage('user');
+    $accounts = $storage
+      ->loadByProperties([
+      'name' => $name,
+      'mail' => $mail,
+    ]);
+    $last_user = reset($accounts);
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
     $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
     $this->assertEqual($referral_cookie->uid, $this->referral_partner_referrer->id(), t('Referrer UID matches in cookied'));
     $this->assertEqual($referral_cookie->type, $this->referral_partner_referral_type->id(), t('Referral type matches in cookie'));
     $this->assertEqual(1, $referral_cookie->auto, t('Referral cookie has auto flag indicating auto assigned'));
-    $uids = \Drupal::entityQuery('user')
-      ->sort('created', 'DESC')
-      ->range(0, 1)
-      ->execute();
-    $last_user_uid = reset($uids);
-    $last_user = User::load($last_user_uid);
-    // $referrer = UserReferral::getReferrer($last_user);
     $referral_entry = UserReferral::getReferralEntry($last_user);
     $this->assertNotIdentical(FALSE, $referral_entry, t('Referral entry exists'));
     $this->assertEqual($this->referral_partner_referrer->id(), $referral_entry->referrer_uid, t('Referrer got recorded'));
@@ -184,18 +192,21 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $edit['name'] = $name = $this->randomMachineName();
     $edit['mail'] = $mail = $edit['name'] . '@example.com';
     $this->drupalPostForm('user/register', $edit, t('Create new account'));
+    $storage = $this->container
+      ->get('entity_type.manager')
+      ->getStorage('user');
+    $accounts = $storage
+      ->loadByProperties([
+      'name' => $name,
+      'mail' => $mail,
+    ]);
+    $last_user = reset($accounts);
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
     $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
     $this->assertEqual($referral_cookie->uid, $this->consultant_referrer->id(), t('Referrer UID matches in cookied'));
     $this->assertEqual($referral_cookie->type, $this->consultant_referral_type->id(), t('Referral type matches in cookie'));
     $this->assertEqual(TRUE, empty($referral_cookie->auto), t('Referral cookie has no auto flag indicating auto assigned'));
-    $uids = \Drupal::entityQuery('user')
-      ->sort('created', 'DESC')
-      ->range(0, 1)
-      ->execute();
-    $last_user_uid = reset($uids);
-    $last_user = User::load($last_user_uid);
     $referrer = UserReferral::getReferrer($last_user);
     $this->assertEqual($this->consultant_referrer->id(), $referrer->id(), t('Referrer got recorded'));
     $referral_entry = UserReferral::getReferralEntry($last_user);
