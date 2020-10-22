@@ -4,7 +4,7 @@ namespace Drupal\urct\Tests\Functional;
 
 use Drupal\Tests\BrowserTestBase;
 use Drupal\user\Entity\User;
-use Drupal\Tests\user_referral\Traits\UserReferralTypeCreationTrait;
+use Drupal\Tests\user_referral\Traits\UserReferralTypeTestTrait;
 use Drupal\user_referral\Entity\UserReferralType;
 
 /**
@@ -14,7 +14,7 @@ use Drupal\user_referral\Entity\UserReferralType;
  */
 class UrctBasicTest extends BrowserTestBase {
 
-  use UserReferralTypeCreationTrait {
+  use UserReferralTypeTestTrait {
     createUserReferralType as drupalCreateUserReferralType;
   }
 
