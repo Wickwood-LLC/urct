@@ -5,6 +5,7 @@ namespace Drupal\urct\Tests\Functional;
 use Drupal\Tests\BrowserTestBase;
 use Drupal\Tests\user_referral\Traits\UserReferralTypeTestTrait;
 use Drupal\Tests\user_referral\Traits\ReferralIdFieldTrait;
+use Drupal\Tests\user_referral\Traits\UserRegistrationTrait;
 use Drupal\user\Entity\User;
 use Drupal\user_referral\UserReferral;
 use Drupal\user_referral\Entity\UserReferralType;
@@ -23,6 +24,8 @@ class UrctUserRegisterTest extends BrowserTestBase {
   use ReferralIdFieldTrait {
     createReferralIDField as drupalCreateReferralIDField;
   }
+
+  use UserRegistrationTrait;
 
   protected $defaultTheme = 'stark';
 
@@ -108,19 +111,7 @@ class UrctUserRegisterTest extends BrowserTestBase {
     $this->drupalGet('');
     $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
     $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
-    $edit = [];
-    $edit['name'] = $name = $this->randomMachineName();
-    $edit['mail'] = $mail = $edit['name'] . '@example.com';
-    $this->drupalPostForm('user/register', $edit, t('Create new account'));
-    $storage = $this->container
-      ->get('entity_type.manager')
-      ->getStorage('user');
-    $accounts = $storage
-      ->loadByProperties([
-      'name' => $name,
-      'mail' => $mail,
-    ]);
-    $last_user = reset($accounts);
+    $last_user = $this->registerUser();
     $this->assertSession()->statusCodeEquals(200);
     $referral_entry = UserReferral::getReferralEntry($last_user);
     $this->assertEqual($referral_entry->referrer_uid, $referral_cookie->uid, t('Referrer UID matche in cookie and referral entry'));
@@ -132,19 +123,7 @@ class UrctUserRegisterTest extends BrowserTestBase {
 
     // Test referral ID of default referral type at end of the URL.
     $this->drupalGet($this->consultant_referrer->get('field_referral_id')->first()->getValue()['value']);
-    $edit = [];
-    $edit['name'] = $name = $this->randomMachineName();
-    $edit['mail'] = $mail = $edit['name'] . '@example.com';
-    $this->drupalPostForm('user/register', $edit, t('Create new account'));
-    $storage = $this->container
-      ->get('entity_type.manager')
-      ->getStorage('user');
-    $accounts = $storage
-      ->loadByProperties([
-      'name' => $name,
-      'mail' => $mail,
-    ]);
-    $last_user = reset($accounts);
+    $last_user = $this->registerUser();
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
     $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
@@ -160,19 +139,7 @@ class UrctUserRegisterTest extends BrowserTestBase {
 
     // Test referral id / referral type at end of the URL.
     $this->drupalGet($this->referral_partner_referrer->get($this->referral_id_field_2)->first()->getValue()['value'] . '/' . $this->referral_partner_referral_type->id());
-    $edit = [];
-    $edit['name'] = $name = $this->randomMachineName();
-    $edit['mail'] = $mail = $edit['name'] . '@example.com';
-    $this->drupalPostForm('user/register', $edit, t('Create new account'));
-    $storage = $this->container
-      ->get('entity_type.manager')
-      ->getStorage('user');
-    $accounts = $storage
-      ->loadByProperties([
-      'name' => $name,
-      'mail' => $mail,
-    ]);
-    $last_user = reset($accounts);
+    $last_user = $this->registerUser();
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
     $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
@@ -188,19 +155,7 @@ class UrctUserRegisterTest extends BrowserTestBase {
     // Ensure accessing referral entry does not set auto flag in cookie or referral entry
     // Also ensure non-auto referral cookie is set by accessing referral link without clearing browser cookies.
     $this->drupalGet('user/' . $this->consultant_referrer->id() . '/user-referral/' . $this->consultant_referral_type->id());
-    $edit = [];
-    $edit['name'] = $name = $this->randomMachineName();
-    $edit['mail'] = $mail = $edit['name'] . '@example.com';
-    $this->drupalPostForm('user/register', $edit, t('Create new account'));
-    $storage = $this->container
-      ->get('entity_type.manager')
-      ->getStorage('user');
-    $accounts = $storage
-      ->loadByProperties([
-      'name' => $name,
-      'mail' => $mail,
-    ]);
-    $last_user = reset($accounts);
+    $last_user = $this->registerUser();
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->cookieExists(UserReferralType::COOKIE_NAME);
     $referral_cookie = json_decode($this->getSession()->getCookie(UserReferralType::COOKIE_NAME));
