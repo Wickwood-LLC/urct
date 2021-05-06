@@ -313,19 +313,6 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
     return $next_item;
   }
 
-  public function checkPathReferral($path) {
-    if (preg_match('~/([a-zA-Z]+)-refid-(\w+)$~', $path, $matches)) {
-      $parts = array_filter(explode('/', $path));
-      array_pop($parts);
-      $path = '/' . implode('/', $parts);
-      $referral_item = new \stdClass();
-      $referral_item->refid = $matches[1];
-      $referral_item->type = str_replace('-', '_', $matches[2]);
-      return $referral_item;
-    }
-    return NULL;
-  }
-
   public function appendPathReferralToPath($path, $referral_item) {
     if (isset($referral_item->refid_only) && $referral_item->refid_only) {
       $new_path = rtrim($path, '/') . '/' . $referral_item->refid;
