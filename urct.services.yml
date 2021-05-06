@@ -40,3 +40,8 @@ services:
     arguments: ['@urct.referral_manager']
     tags:
       - { name: cache.context }
+  urct.breadcrumb.default:
+    class: Drupal\urct\UrctPathBasedBreadcrumbBuilder
+    arguments: ['@router.request_context', '@access_manager', '@router', '@path_processor_manager', '@config.factory',  '@title_resolver', '@current_user', '@path.current', '@path.matcher']
+    tags:
+      - { name: breadcrumb_builder, priority: 1 }
