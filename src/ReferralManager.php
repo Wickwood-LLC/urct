@@ -336,7 +336,7 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
    * {@inheritdoc}
    */
   public function processOutbound($path, &$options = [], Request $request = NULL, BubbleableMetadata $bubbleable_metadata = NULL) {
-    if (\Drupal::currentUser()->isAnonymous() && $this->referralItem && ( empty($options['route']) || !\Drupal::service('router.admin_context')->isAdminRoute($options['route']) ) ) {
+    if (\Drupal::currentUser()->isAnonymous() && $this->referralItem && ( empty($options['route']) || !\Drupal::service('router.admin_context')->isAdminRoute($options['route']) ) && !$this->isCrawler()) {
       $path = $this->appendPathReferralToPath($path, $this->referralItem);
       $bubbleable_metadata = $bubbleable_metadata ?: new BubbleableMetadata();
       $bubbleable_metadata->addCacheContexts(['user_referral']);
