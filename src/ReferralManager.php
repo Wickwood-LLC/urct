@@ -145,8 +145,8 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
           $fallback_type = $config->get('fallback_type');
           if (!empty($fallback_type)) {
             $last_selected = new \stdClass();
-            $last_selected->uid = $config->get('last_selected_uid') ?? 0;
-            $last_selected->type = $config->get('last_selected_referral_type') ?? NULL;
+            $last_selected->uid  = \Drupal::state()->get('urct.last_selected_uid') ?? 0;
+            $last_selected->type  = \Drupal::state()->get('urct.last_selected_referral_type') ?? NULL;
 
             if ($fallback_type == 'referral_types') {
               $referral_item = $this->getUserFromReferralTypes($last_selected);
@@ -305,8 +305,8 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
       $next_item = reset($result);
     }
     if (!empty($next_item->uid)) {
-      $config->set('last_selected_uid', $next_item->uid);
-      $config->set('last_selected_referral_type', $next_item->type);
+      \Drupal::state()->set('urct.last_selected_uid', $next_item->uid);
+      \Drupal::state()->set('urct.last_selected_referral_type', $next_item->type);
       $config->save();
     }
 

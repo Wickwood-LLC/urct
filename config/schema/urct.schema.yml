@@ -40,12 +40,6 @@ urct.settings:
     referral_types_filter_by_view_negate:
       type: boolean
       label: Negate filtering by view result
-    last_selected_uid:
-      type: integer
-      label: User ID of the account selected as fallback referrer last time.
-    last_selected_referral_type:
-      type: string
-      label: Last select referral type for last selected uid
     roll_up:
       type: string
       label: The roll-up method to follow in case referrer is not active.

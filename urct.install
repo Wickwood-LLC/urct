@@ -96,6 +96,16 @@ function urct_update_8001(&$sandbox = NULL) {
 }
 
 /**
+ * Remove configuration settings storing the last selected referral in rotation.
+ */
+function urct_update_8002(&$sandbox = NULL) {
+  $config = \Drupal::configFactory()->getEditable('urct.settings');
+  $config->clear('last_selected_uid');
+  $config->clear('last_selected_referral_type');
+  $config->save();
+}
+
+/**
  * Implements hook_uninstall().
  */
 function urct_uninstall() {
