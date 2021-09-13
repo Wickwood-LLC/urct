@@ -187,7 +187,7 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
           $referral_item->refid = $referral_type->getAccountReferralID($account);
         }
 
-        if (!$cookie_exists) {
+        if (!$cookie_exists && !$this->isCrawler()) {
           ReferralUrlHandler::setPathReferralCookie($referral_item);
         }
       }
