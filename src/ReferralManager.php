@@ -88,6 +88,7 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
 
   public function getCurrentReferralItem() {
     if (!isset($this->referralItem)) {
+      $cookie_exists = FALSE;
       $referral_item = NULL;
       if ($this->currentUser->isAuthenticated()) {
         $referral_types = UserReferralType::loadMultiple();
@@ -104,7 +105,6 @@ class ReferralManager implements OutboundPathProcessorInterface, EventSubscriber
         }
       }
       else {
-        $cookie_exists = FALSE;
         $config = $this->configFactory->getEditable('urct.settings');
         if ($config->get('debug')) {
           $this->killSwitch->trigger();
